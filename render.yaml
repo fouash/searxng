@@ -2,6 +2,7 @@ services:
   - type: web
     name: searxng
     runtime: docker
+    branch: master
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /healthz

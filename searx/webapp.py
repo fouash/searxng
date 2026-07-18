@@ -52,6 +52,7 @@ from searx import (
     get_setting,
     settings,
 )
+from searx.search_monitor import search_monitor
 
 from searx import infopage
 from searx import limiter
@@ -652,6 +653,17 @@ def search():
         search_obj = searx.search.SearchWithPlugins(search_query, sxng_request, sxng_request.user_plugins)
         result_container = search_obj.search()
 
+        # Log search for monitoring
+        query_text = str(search_query.query) if search_query else ''
+        categories = ','.join(search_query.categories) if search_query and search_query.categories else 'general'
+        lang = str(search_query.lang) if search_query else 'all'
+        search_monitor.log_search(
+            query=query_text,
+            category=categories,
+            language=lang,
+            engine=None
+        )
+
     except SearxParameterException as e:
         logger.exception('search error: SearxParameterException')
         return index_error(output_format, e.message), 400
@@ -1151,6 +1163,18 @@ def stats_errors():
     filtered_engines = dict(filter(lambda kv: sxng_request.preferences.validate_token(kv[1]), engines.items()))
     result = get_engine_errors(filtered_engines)
     return jsonify(result)
+
+
+@app.route('/stats/searches', methods=['GET'])
+def stats_searches():
+    """Return hourly search statistics."""
+    stats = search_monitor.get_hourly_stats()
+    current_hour = search_monitor.get_current_hour_count()
+    return jsonify({
+        'current_hour': current_hour,
+        'hourly_stats': stats,
+        'total_searches': sum(stats.values())
+    })
 
 
 @app.route('/metrics')

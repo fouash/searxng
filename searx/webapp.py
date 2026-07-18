@@ -1167,13 +1167,25 @@ def stats_errors():
 
 @app.route('/stats/searches', methods=['GET'])
 def stats_searches():
-    """Return hourly search statistics."""
-    stats = search_monitor.get_hourly_stats()
-    current_hour = search_monitor.get_current_hour_count()
+    """Return search statistics (hourly, daily, weekly)."""
+    hourly_stats = search_monitor.get_hourly_stats()
+    daily_stats = search_monitor.get_daily_stats()
+    weekly_stats = search_monitor.get_weekly_stats()
+
     return jsonify({
-        'current_hour': current_hour,
-        'hourly_stats': stats,
-        'total_searches': sum(stats.values())
+        'current': {
+            'hour': search_monitor.get_current_hour_count(),
+            'day': search_monitor.get_current_day_count(),
+            'week': search_monitor.get_current_week_count(),
+        },
+        'hourly': hourly_stats,
+        'daily': daily_stats,
+        'weekly': weekly_stats,
+        'totals': {
+            'searches_today': search_monitor.get_current_day_count(),
+            'searches_this_week': search_monitor.get_current_week_count(),
+            'total_all_time': sum(daily_stats.values()),
+        }
     })
 
 

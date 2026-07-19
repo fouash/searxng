@@ -20,8 +20,8 @@ search:
     - json
 
 outgoing:
-  request_timeout: 6.0
-  max_request_timeout: 10.0
+  request_timeout: 15.0
+  max_request_timeout: 30.0
 
 ui:
   default_theme: simple
@@ -76,10 +76,16 @@ engines:
   - name: torch
     disabled: true
 
+  - name: mojeek
+    disabled: false
+    timeout: 15
+    # Independent search engine - less rate-limiting
+
   # Keep only working engines
   - name: crtsh
     engine: crtsh
     shortcut: crt
     disabled: false
-    timeout: 10
-    # Works reliably - no rate-limiting
+    timeout: 25
+    # SSL certificate transparency search - no rate-limiting
+    # Timeout increased for slow network conditions

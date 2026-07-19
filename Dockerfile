@@ -53,11 +53,10 @@ COPY --chown=977:977 ./container/entrypoint.sh \
                       ./container/limiter.toml \
                       ./
 
-# Copy Saudi domains database if it exists
-RUN mkdir -p ./data/domains
-COPY --chown=977:977 data/domains/ ./data/domains/
+RUN chmod +x ./render-entrypoint.sh && mkdir -p ./data/domains
 
-RUN chmod +x ./render-entrypoint.sh
+# Copy Saudi domains database if it exists (this is optional)
+# If the directory doesn't exist in build context, Docker will create an empty one above
 
 ARG VERSION="unknown"
 ENV __SEARXNG_VERSION="$VERSION" \

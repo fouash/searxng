@@ -1,7 +1,7 @@
 # Read the documentation before extending the defaults:
 # https://docs.searxng.org/admin/settings/
 
-use_default_settings: true
+use_default_settings: false
 
 server:
   secret_key: "ultrasecretkey"
@@ -34,22 +34,35 @@ ui:
   default_theme: simple
 
 engines:
-  # Domain discovery engines for company URL finding (Saudi Arabia priority)
+  # PRIORITY: Domain discovery engines (no rate-limits, optimized for company URL finding)
   - name: whois
     engine: whois
     shortcut: whois
     categories: business
     disabled: false
-    # Saudi TLDs checked first: .sa, .com.sa get highest priority scores
+    # Saudi TLDs (.sa, .com.sa) get highest priority scores (1.0)
 
   - name: crtsh
     engine: crtsh
     shortcut: crt
     categories: business
     disabled: false
-    # Certificate Transparency search: Saudi domains (.sa, .com.sa) ranked highest
+    # Certificate Transparency: Saudi domains ranked first
 
-  # These fail at startup in containerised deployments — disable to clean logs.
+  # Rate-limited public engines — disabled to prevent errors
+  # These engines block SearXNG due to high request volume
+  - name: brave
+    disabled: true
+  - name: duckduckgo
+    disabled: true
+  - name: google cse
+    disabled: true
+  - name: startpage
+    disabled: true
+  - name: qwant
+    disabled: true
+
+  # Fail at startup in containerized deployments
   - name: wikidata
     disabled: true
   - name: ahmia

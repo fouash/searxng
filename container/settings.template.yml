@@ -27,20 +27,29 @@ ui:
   default_theme: simple
 
 engines:
+  # OFFLINE SAUDI COMPANY DISCOVERY (Primary)
+  # Local database of Saudi domains from Certificate Transparency logs
+  # Works offline without any external API calls
+  # Download domains: python scripts/download_saudi_domains.py
+  - name: saudi_companies_db
+    disabled: false
+
+  # OPTIONAL: Certificate Transparency API (if outbound access available)
+  # Requires Render Standard tier or higher for outbound HTTPS
+  - name: crtsh
+    engine: crtsh
+    shortcut: crt
+    categories: business
+    disabled: true
+    # Enable if deploying on Render with outbound access
+
   # NETWORK LIMITATION NOTICE:
   # The Render environment has restricted outbound network access.
   # All external search engines timeout due to proxy/firewall policies.
-  #
-  # Attempted:
-  # - Google, Bing, Yahoo, DuckDuckGo: Rate-limited or blocked
-  # - crt.sh (SSL Certificates): Timeout (network blocked)
-  # - mojeek (Indie Search): Timeout (network blocked)
-  # - All other engines: Network access restricted
-  #
-  # Solution: Deploy to environment with unrestricted outbound HTTPS,
-  # or configure a VPN/proxy for external API access.
+  # For outbound access, upgrade Render to Standard tier or higher.
+  # For offline-only operation, use saudi_companies_db engine above.
 
-  # Disable all engines to avoid error messages
+  # Disable all external engines to avoid error messages
   - name: google
     disabled: true
   - name: bing
@@ -59,7 +68,7 @@ engines:
     disabled: true
   - name: wikidata
     disabled: true
-  - name: crtsh
+  - name: whois
     disabled: true
   - name: mojeek
     disabled: true

@@ -53,14 +53,17 @@ engines:
 
   # Reliable search engines (don't rate-limit as aggressively)
   - name: bing
+    engine: bing
     disabled: false
     # Microsoft Bing: reliable for company website searches
 
   - name: mojeek
+    engine: mojeek
     disabled: false
     # Mojeek: privacy-focused, independent crawler, minimal rate-limiting
 
   - name: marginalia
+    engine: marginalia
     disabled: false
     # Marginalia: indie search engine, excellent for finding company websites
 

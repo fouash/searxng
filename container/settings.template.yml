@@ -14,14 +14,14 @@ server:
     Access-Control-Allow-Headers: "Content-Type, X-Requested-With"
 
 search:
-  default_lang: "ar-SA"
+  default_lang: "ar"
   safe_search: 0
   formats:
     - html
     - json
   languages:
-    - "ar-SA"
     - "ar"
+    - "ar-SA"
     - "en"
     - "all"
 
@@ -34,23 +34,28 @@ ui:
   default_theme: simple
 
 engines:
-  # Search engines configured for Saudi Arabia region
+  # PRIORITY: Domain discovery - finds company websites via SSL certificates
+  - name: crtsh
+    engine: crtsh
+    shortcut: crt
+    disabled: false
+    timeout: 10
+    # Returns all domains with SSL certificates
+    # Perfect for finding company websites (.sa, .com, .net, etc)
+
+  # Web search engines - secondary results
   - name: google
     disabled: false
+    timeout: 6
     params:
-      gl: "sa"          # Google: geolocation = Saudi Arabia
-      cr: "countrySA"   # Google: restrict to Saudi Arabia country
-      # Language is controlled by default_lang: ar-SA setting
+      gl: "sa"
+      cr: "countrySA"
 
   - name: bing
     disabled: false
+    timeout: 6
     params:
-      cc: "SA"          # Bing: country code = Saudi Arabia
-      # Market defaults to language setting (ar-SA)
-
-  - name: yahoo
-    disabled: false
-    # Yahoo: language and region inherited from default settings
+      cc: "SA"
 
   # Disable rate-limited engines
   - name: brave
@@ -63,8 +68,10 @@ engines:
     disabled: true
   - name: qwant
     disabled: true
+  - name: yahoo
+    disabled: true
 
-  # Disable problematic engines
+  # Disable other problematic engines
   - name: searx
     disabled: true
   - name: wikidata
@@ -74,6 +81,4 @@ engines:
   - name: torch
     disabled: true
   - name: whois
-    disabled: true
-  - name: crtsh
     disabled: true

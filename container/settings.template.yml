@@ -14,15 +14,15 @@ server:
     Access-Control-Allow-Headers: "Content-Type, X-Requested-With"
 
 search:
-  default_lang: "en"
+  default_lang: "ar-SA"
   safe_search: 0
   formats:
     - html
     - json
   languages:
-    - "en"
-    - "ar"
     - "ar-SA"
+    - "ar"
+    - "en"
     - "all"
 
 outgoing:
@@ -30,11 +30,24 @@ outgoing:
   max_request_timeout: 10.0
 
 ui:
-  default_locale: "en"
+  default_locale: "ar"
   default_theme: simple
 
 engines:
-  # Disable rate-limited engines that block cloud IPs
+  # Reliable search engines with region focus
+  - name: google
+    disabled: false
+    # Google: searches in Arabic by default with ar-SA language setting
+
+  - name: bing
+    disabled: false
+    # Bing: good for Arabic and regional searches
+
+  - name: yahoo
+    disabled: false
+    # Yahoo: fallback search
+
+  # Disable rate-limited engines
   - name: brave
     disabled: true
   - name: duckduckgo
@@ -46,19 +59,9 @@ engines:
   - name: qwant
     disabled: true
 
-  # Disable cert/SSL engines to focus on web/domain search
+  # Disable problematic engines
   - name: searx
     disabled: true
-
-  # Keep reliable search engines
-  - name: bing
-    disabled: false
-  - name: google
-    disabled: false
-  - name: yahoo
-    disabled: false
-
-  # Disable domain-specific or problematic engines
   - name: wikidata
     disabled: true
   - name: ahmia

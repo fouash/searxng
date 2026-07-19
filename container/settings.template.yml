@@ -14,15 +14,15 @@ server:
     Access-Control-Allow-Headers: "Content-Type, X-Requested-With"
 
 search:
-  default_lang: "ar-SA"
+  default_lang: "en"
   safe_search: 0
   formats:
     - html
     - json
   languages:
-    - "ar-SA"
+    - "en"
     - "ar"
-    - "en-US"
+    - "ar-SA"
     - "all"
 
 outgoing:
@@ -30,8 +30,42 @@ outgoing:
   max_request_timeout: 10.0
 
 ui:
-  default_locale: "ar"
+  default_locale: "en"
   default_theme: simple
 
-# Use default settings with minimal engine configuration
-# This allows SearXNG to load all default engines properly
+engines:
+  # Disable rate-limited engines that block cloud IPs
+  - name: brave
+    disabled: true
+  - name: duckduckgo
+    disabled: true
+  - name: google cse
+    disabled: true
+  - name: startpage
+    disabled: true
+  - name: qwant
+    disabled: true
+
+  # Disable cert/SSL engines to focus on web/domain search
+  - name: searx
+    disabled: true
+
+  # Keep reliable search engines
+  - name: bing
+    disabled: false
+  - name: google
+    disabled: false
+  - name: yahoo
+    disabled: false
+
+  # Disable domain-specific or problematic engines
+  - name: wikidata
+    disabled: true
+  - name: ahmia
+    disabled: true
+  - name: torch
+    disabled: true
+  - name: whois
+    disabled: true
+  - name: crtsh
+    disabled: true

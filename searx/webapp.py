@@ -1669,7 +1669,7 @@ def _render_searches_dashboard(stats_data):
         </div>
 
         <div class="footer">
-            <p>SearXNG Search Analytics Dashboard | Last updated: <strong>{datetime_str}</strong></p>
+            <p>SearXNG Search Analytics Dashboard | Last updated: <strong>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</strong></p>
             <p>JSON API available at: <code>/stats/searches?format=json</code></p>
         </div>
     </div>
@@ -1752,7 +1752,7 @@ def _render_searches_dashboard(stats_data):
 </body>
 </html>"""
 
-    return Response(html.format(datetime_str=datetime.now().strftime('%Y-%m-%d %H:%M:%S')), mimetype='text/html')
+    return Response(html, mimetype='text/html')
 
 
 @app.route('/metrics')

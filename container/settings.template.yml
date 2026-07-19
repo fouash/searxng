@@ -64,10 +64,6 @@ engines:
     disabled: false
     # Marginalia: indie search engine, excellent for finding company websites
 
-  - name: metager
-    disabled: false
-    # MetaGer: German-based metasearch, no rate-limiting
-
   # Rate-limited or unreliable engines — disabled to prevent errors
   - name: brave
     disabled: true

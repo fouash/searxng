@@ -34,18 +34,23 @@ ui:
   default_theme: simple
 
 engines:
-  # Reliable search engines with region focus
+  # Search engines configured for Saudi Arabia region
   - name: google
     disabled: false
-    # Google: searches in Arabic by default with ar-SA language setting
+    params:
+      gl: "sa"          # Google: geolocation = Saudi Arabia
+      cr: "countrySA"   # Google: restrict to Saudi Arabia country
+      # Language is controlled by default_lang: ar-SA setting
 
   - name: bing
     disabled: false
-    # Bing: good for Arabic and regional searches
+    params:
+      cc: "SA"          # Bing: country code = Saudi Arabia
+      # Market defaults to language setting (ar-SA)
 
   - name: yahoo
     disabled: false
-    # Yahoo: fallback search
+    # Yahoo: language and region inherited from default settings
 
   # Disable rate-limited engines
   - name: brave

@@ -1,0 +1,19 @@
+Saudi Company Domains - Certificate Transparency Report
+============================================================
+
+Downloaded: 2026-07-19T18:29:55Z
+Source: Certificate Transparency logs (crt.sh)
+
+Saudi domains (.sa, .com.sa, etc): 3605
+Regional domains (.ae, .co, etc): 655
+Total domains found: 4260
+
+Errors encountered:
+  - Error querying .gov.sa: 502 Server Error: Bad Gateway for url: https://crt.sh/?q=%25..gov.sa&output=json
+  - Error querying .org.sa: 502 Server Error: Bad Gateway for url: https://crt.sh/?q=%25..org.sa&output=json
+  - Error querying .net.sa: 502 Server Error: Bad Gateway for url: https://crt.sh/?q=%25..net.sa&output=json
+  - Error querying .edu.sa: 502 Server Error: Bad Gateway for url: https://crt.sh/?q=%25..edu.sa&output=json
+  - Error querying .ac.sa: 502 Server Error: Bad Gateway for url: https://crt.sh/?q=%25..ac.sa&output=json
+  - Error querying .ae: 502 Server Error: Bad Gateway for url: https://crt.sh/?q=%25..ae&output=json
+  - Error querying .com.ae: 502 Server Error: Bad Gateway for url: https://crt.sh/?q=%25..com.ae&output=json
+  - Error querying .ae: 404 Client Error: Not Found for url: https://crt.sh/?q=%25..ae&output=json

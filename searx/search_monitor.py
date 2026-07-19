@@ -10,7 +10,11 @@ from threading import Lock
 logger = logging.getLogger(__name__)
 
 # Log file path for persistent search results
-SEARCH_LOG_FILE = os.environ.get('SEARXNG_LOG_DIR', '/var/log/searxng') + '/search_results.log'
+# Use /etc/searxng or temp directory as fallback
+SEARCH_LOG_FILE = os.environ.get(
+    'SEARXNG_LOG_FILE',
+    os.path.join(os.environ.get('SEARXNG_DATA_PATH', '/etc/searxng'), 'search_results.log')
+)
 
 class SearchMonitor:
     """Track searches with detailed metrics: results, engines, response time, errors."""
@@ -37,13 +41,24 @@ class SearchMonitor:
             log_dir = os.path.dirname(SEARCH_LOG_FILE)
             if log_dir and not os.path.exists(log_dir):
                 os.makedirs(log_dir, exist_ok=True)
+                logger.info(f"Created log directory: {log_dir}")
+
             # Create file if it doesn't exist
             if not os.path.exists(SEARCH_LOG_FILE):
                 with open(SEARCH_LOG_FILE, 'w') as f:
                     f.write('Timestamp | Search Query | Results Count | First Result URL | Engines | Status\n')
                     f.write('=' * 120 + '\n')
+                logger.info(f"Created search log file: {SEARCH_LOG_FILE}")
+            else:
+                logger.info(f"Using existing search log file: {SEARCH_LOG_FILE}")
+
+            # Test write access
+            with open(SEARCH_LOG_FILE, 'a') as f:
+                pass
+            logger.info(f"Search log file is writable at: {SEARCH_LOG_FILE}")
+
         except Exception as e:
-            logger.warning(f"Could not ensure log file: {e}")
+            logger.error(f"Could not ensure log file at {SEARCH_LOG_FILE}: {e}")
 
     def _load_recent_searches_from_log(self):
         """Load recent searches from log file into memory on startup."""
@@ -134,6 +149,10 @@ class SearchMonitor:
             status: Search status
         """
         try:
+            # Ensure log file exists
+            if not os.path.exists(SEARCH_LOG_FILE):
+                self._ensure_log_file()
+
             query_short = (query[:50] + '...') if len(query) > 50 else query
 
             # Write header for this search
@@ -152,7 +171,7 @@ class SearchMonitor:
                     f.write("   (No results found)\n")
 
         except Exception as e:
-            logger.warning(f"Could not write to search log file: {e}")
+            logger.error(f"Could not write to search log file at {SEARCH_LOG_FILE}: {e}")
 
     def log_search(self, query, category=None, language=None, engine=None, num_results=0,
                    response_time=0.0, engines_list=None, error=None, first_result_url=None, result_urls=None):

@@ -14,71 +14,14 @@ server:
     Access-Control-Allow-Headers: "Content-Type, X-Requested-With"
 
 search:
-  default_lang: "ar"
   safe_search: 0
   formats:
     - html
     - json
-  languages:
-    - "ar"
-    - "ar-SA"
-    - "en"
-    - "all"
 
 outgoing:
   request_timeout: 6.0
   max_request_timeout: 10.0
 
 ui:
-  default_locale: "ar"
   default_theme: simple
-
-engines:
-  # PRIORITY: Domain discovery - finds company websites via SSL certificates
-  - name: crtsh
-    engine: crtsh
-    shortcut: crt
-    disabled: false
-    timeout: 10
-    # Returns all domains with SSL certificates
-    # Perfect for finding company websites (.sa, .com, .net, etc)
-
-  # Web search engines - secondary results
-  - name: google
-    disabled: false
-    timeout: 6
-    params:
-      gl: "sa"
-      cr: "countrySA"
-
-  - name: bing
-    disabled: false
-    timeout: 6
-    params:
-      cc: "SA"
-
-  # Disable rate-limited engines
-  - name: brave
-    disabled: true
-  - name: duckduckgo
-    disabled: true
-  - name: google cse
-    disabled: true
-  - name: startpage
-    disabled: true
-  - name: qwant
-    disabled: true
-  - name: yahoo
-    disabled: true
-
-  # Disable other problematic engines
-  - name: searx
-    disabled: true
-  - name: wikidata
-    disabled: true
-  - name: ahmia
-    disabled: true
-  - name: torch
-    disabled: true
-  - name: whois
-    disabled: true

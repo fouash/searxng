@@ -41,16 +41,34 @@ engines:
     categories: business
     disabled: false
     # Saudi TLDs (.sa, .com.sa) get highest priority scores (1.0)
+    # Also searches: .com, .net, .org, .ae, .io, .co (all TLDs)
 
   - name: crtsh
     engine: crtsh
     shortcut: crt
     categories: business
     disabled: false
-    # Certificate Transparency: Saudi domains ranked first
+    # Certificate Transparency: Saudi domains (.sa, .com.sa) ranked first
+    # Returns ALL domains found in SSL certificates
 
-  # Rate-limited public engines — disabled to prevent errors
-  # These engines block SearXNG due to high request volume
+  # Reliable search engines (don't rate-limit as aggressively)
+  - name: bing
+    disabled: false
+    # Microsoft Bing: reliable for company website searches
+
+  - name: mojeek
+    disabled: false
+    # Mojeek: privacy-focused, independent crawler, minimal rate-limiting
+
+  - name: marginalia
+    disabled: false
+    # Marginalia: indie search engine, excellent for finding company websites
+
+  - name: metager
+    disabled: false
+    # MetaGer: German-based metasearch, no rate-limiting
+
+  # Rate-limited or unreliable engines — disabled to prevent errors
   - name: brave
     disabled: true
   - name: duckduckgo

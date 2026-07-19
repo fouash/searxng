@@ -34,6 +34,19 @@ ui:
   default_theme: simple
 
 engines:
+  # Domain discovery engines for company URL finding (no rate limits)
+  - name: whois
+    engine: whois
+    shortcut: whois
+    categories: business
+    disabled: false
+
+  - name: crtsh
+    engine: crtsh
+    shortcut: crt
+    categories: business
+    disabled: false
+
   # These fail at startup in containerised deployments — disable to clean logs.
   - name: wikidata
     disabled: true

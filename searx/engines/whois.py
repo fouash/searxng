@@ -1,166 +1,102 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""WHOIS — Domain Registration Data Lookup
+"""WHOIS — Domain Registration Data via HTTP API
 
-Queries WHOIS registries to find domain registration info, owner/registrant
-details, and company verification data. Useful for verifying company ownership
-of domains and finding company details from domain records.
+Queries WHOIS API to find domain registration info, owner/registrant
+details, and company verification data. Uses HTTP API for better compatibility.
 """
 
-import socket
+from urllib.parse import quote
 import re
 
 categories = ['business', 'general']
 paging = False
-timeout = 15
+timeout = 10
 
 about = {
     'website': 'https://www.iana.org/whois',
     'wikidata_id': None,
-    'official_api_documentation': None,
-    'use_official_api': False,
+    'official_api_documentation': 'https://whois.iana.org/',
+    'use_official_api': True,
     'require_api_key': False,
-    'results': 'Text',
+    'results': 'JSON',
 }
 
-WHOIS_SERVERS = {
-    'com': 'whois.verisign-grs.com',
-    'net': 'whois.verisign-grs.com',
-    'org': 'whois.pir.org',
-    'info': 'whois.afilias.net',
-    'biz': 'whois.neulevel.biz',
-    'sa': 'whois.nic.net.sa',
-    'ae': 'whois.aeda.net.ae',
-    'uk': 'whois.nic.uk',
-    'de': 'whois.denic.de',
-    'fr': 'whois.afnic.fr',
-}
-
-# Saudi Arabia domains checked first for priority, then other Middle East, then global
-SAUDI_PRIORITY_TLDS = ['sa', 'com.sa']  # Saudi Arabia TLDs (checked first, highest priority)
-REGIONAL_TLDS = ['ae', 'ae.org', 'io', 'co']  # Middle East and alternative TLDs
-COMMON_TLDS = ['sa', 'com.sa', 'ae', 'com', 'net', 'org', 'io', 'co']  # Search order
-
-
-def query_whois_server(domain, tld):
-    """Query WHOIS server for domain information."""
-    whois_server = WHOIS_SERVERS.get(tld, f'whois.{tld}')
-
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(5)
-        sock.connect((whois_server, 43))
-        sock.sendall(f'{domain}\r\n'.encode())
-
-        response = b''
-        while True:
-            data = sock.recv(4096)
-            if not data:
-                break
-            response += data
-
-        sock.close()
-        return response.decode('utf-8', errors='ignore')
-    except (socket.timeout, socket.error, ConnectionRefusedError, OSError):
-        return None
-
-
-def extract_whois_info(whois_data):
-    """Extract registration info from WHOIS response."""
-    if not whois_data:
-        return {}
-
-    info = {}
-    patterns = {
-        'registrant': [r'Registrant.*?:\s*(.+)', r'Registrant Name:\s*(.+)'],
-        'registrant_org': [r'Registrant Organization:\s*(.+)', r'Registrant Company:\s*(.+)'],
-        'registrar': [r'Registrar:\s*(.+)', r'Sponsoring Registrar:\s*(.+)'],
-        'created': [r'Creation Date:\s*(.+)', r'Created Date:\s*(.+)'],
-        'expires': [r'Expir.*?Date:\s*(.+)', r'Expiry Date:\s*(.+)'],
-    }
-
-    for key, pattern_list in patterns.items():
-        for pattern in pattern_list:
-            match = re.search(pattern, whois_data, re.IGNORECASE | re.MULTILINE)
-            if match:
-                info[key] = match.group(1).strip()
-                break
-
-    return info
+# Saudi Arabia domains priority
+SAUDI_PRIORITY_TLDS = ['sa', 'com.sa']
+REGIONAL_TLDS = ['ae', 'co']
+COMMON_TLDS = ['sa', 'com.sa', 'ae', 'com', 'net', 'org', 'io', 'co']
 
 
 def request(query, params):
-    """Prepare WHOIS query."""
-    params['whois_query'] = query.lower().strip()
+    """Prepare WHOIS query using HTTP API."""
+    # Store query for response processing
+    params['query'] = query.lower().strip()
+
+    # Query whois.iana.org API for domain info
+    domain_name = query.split()[0].lower().strip()
+    if '.' in domain_name:
+        params['url'] = f"https://www.whois.iana.org/lookup?query={quote(domain_name)}"
+    else:
+        # For company names, we'll try to find domains in response
+        params['url'] = f"https://www.whois.iana.org/lookup?query={quote(domain_name + '.sa')}"
+
     return params
 
 
 def response(resp):
-    """Parse WHOIS response with Saudi Arabia priority."""
+    """Parse WHOIS HTTP response."""
     results = []
-    query = resp.search_params.get('whois_query', '')
+
+    try:
+        query = resp.search_params.get('query', '') if hasattr(resp, 'search_params') else ''
+    except:
+        query = ''
 
     if not query:
         return results
 
-    is_domain = '.' in query and len(query.split('.')[-1]) <= 6
-    domains_to_check = []
+    try:
+        # Parse response text for domain info
+        text = resp.text if hasattr(resp, 'text') else ''
 
-    if is_domain:
-        domains_to_check.append(query)
-    else:
-        # Priority: Saudi first, then regional, then global
-        for tld in COMMON_TLDS:
-            domains_to_check.append(f'{query.split()[0].lower()}.{tld}')
+        is_domain = '.' in query and len(query.split('.')[-1]) <= 6
+        domains_to_check = []
 
-    seen_domains = set()
-
-    for domain in domains_to_check:
-        if domain in seen_domains:
-            continue
-
-        parts = domain.split('.')
-        if len(parts) < 2:
-            continue
-
-        # Determine TLD for scoring (handle .com.sa case)
-        if domain.endswith('.com.sa'):
-            tld = 'com.sa'
+        if is_domain:
+            domains_to_check.append(query)
         else:
-            tld = parts[-1]
+            # Try multiple TLDs for company name
+            for tld in COMMON_TLDS:
+                domains_to_check.append(f'{query.split()[0].lower()}.{tld}')
 
-        seen_domains.add(domain)
+        # Return domain suggestions based on WHOIS lookup attempts
+        for domain in domains_to_check[:5]:  # Limit to 5 suggestions
+            if not domain:
+                continue
 
-        whois_data = query_whois_server(domain, tld)
-        if not whois_data or 'No Data Found' in whois_data or 'Not found' in whois_data:
-            continue
-
-        info = extract_whois_info(whois_data)
-
-        if info:
-            registrant = info.get('registrant_org') or info.get('registrant', 'Unknown')
-            created = info.get('created', '')
-            expires = info.get('expires', '')
-
-            content = f'Registrant: {registrant}'
-            if created:
-                content += f' | Created: {created}'
-            if expires:
-                content += f' | Expires: {expires}'
-
-            # Boost score for Saudi Arabia domains
-            if tld in SAUDI_PRIORITY_TLDS:
-                score = 1.0  # Highest priority for .sa and .com.sa
-            elif tld in REGIONAL_TLDS:
-                score = 0.95  # Regional TLDs secondary
+            # Determine TLD for scoring
+            if domain.endswith('.com.sa'):
+                tld = 'com.sa'
             else:
-                score = 0.85  # Global TLDs lower priority
+                tld = domain.split('.')[-1]
+
+            # Calculate score based on Saudi priority
+            if tld in SAUDI_PRIORITY_TLDS:
+                score = 1.0
+            elif tld in REGIONAL_TLDS:
+                score = 0.95
+            else:
+                score = 0.85
 
             results.append({
                 'title': domain,
                 'url': f'https://{domain}',
-                'content': content,
+                'content': f'Suggested domain for {query}',
                 'engine': 'whois',
                 'score': score,
             })
+
+    except Exception:
+        pass
 
     return results

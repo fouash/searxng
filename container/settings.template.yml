@@ -25,3 +25,61 @@ outgoing:
 
 ui:
   default_theme: simple
+
+engines:
+  # Disable all rate-limited engines
+  - name: brave
+    disabled: true
+    # Too many requests - blocks cloud IPs
+
+  - name: duckduckgo
+    disabled: true
+    # Timeout - not compatible with Render IPs
+
+  - name: google cse
+    disabled: true
+    # Too many requests - rate limits
+
+  - name: startpage
+    disabled: true
+    # CAPTCHA blocks - doesn't work from cloud
+
+  - name: wikipedia
+    disabled: true
+    # Timeout - not reliable
+
+  - name: google
+    disabled: true
+    # Rate-limiting on cloud IPs
+
+  - name: bing
+    disabled: true
+    # Rate-limiting on cloud IPs
+
+  - name: yahoo
+    disabled: true
+    # Rate-limiting on cloud IPs
+
+  - name: qwant
+    disabled: true
+    # Rate-limiting
+
+  - name: duckduckgo_definitions
+    disabled: true
+
+  - name: wikidata
+    disabled: true
+
+  - name: ahmia
+    disabled: true
+
+  - name: torch
+    disabled: true
+
+  # Keep only working engines
+  - name: crtsh
+    engine: crtsh
+    shortcut: crt
+    disabled: false
+    timeout: 10
+    # Works reliably - no rate-limiting

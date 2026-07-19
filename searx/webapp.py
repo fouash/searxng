@@ -646,6 +646,7 @@ def search():
     search_query = None
     raw_text_query = None
     result_container = None
+    search_error = None
     try:
         search_query, raw_text_query, _, _, selected_locale = get_search_query_from_webapp(
             sxng_request.preferences, sxng_request.form
@@ -653,22 +654,13 @@ def search():
         search_obj = searx.search.SearchWithPlugins(search_query, sxng_request, sxng_request.user_plugins)
         result_container = search_obj.search()
 
-        # Log search for monitoring
-        query_text = str(search_query.query) if search_query else ''
-        categories = ','.join(search_query.categories) if search_query and search_query.categories else 'general'
-        lang = str(search_query.lang) if search_query else 'all'
-        search_monitor.log_search(
-            query=query_text,
-            category=categories,
-            language=lang,
-            engine=None
-        )
-
     except SearxParameterException as e:
         logger.exception('search error: SearxParameterException')
+        search_error = str(e.message)
         return index_error(output_format, e.message), 400
     except Exception as e:  # pylint: disable=broad-except
         logger.exception(e, exc_info=True)
+        search_error = 'search error'
         return index_error(output_format, gettext('search error')), 500
 
     # 1. check if the result is a redirect for an external bang
@@ -703,6 +695,38 @@ def search():
     previous_result = None
 
     results = result_container.get_ordered_results()
+
+    # Log search for monitoring with detailed metrics
+    if search_query:
+        query_text = str(search_query.query) if search_query else ''
+        categories = ','.join(search_query.categories) if search_query and search_query.categories else 'general'
+        lang = str(search_query.lang) if search_query else 'all'
+
+        # Get response time from timings
+        timings = result_container.get_timings() if result_container else []
+        response_time = sum(t.total for t in timings) if timings else 0.0
+
+        # Get engines that returned results
+        engines_list = set()
+        for result in results:
+            if isinstance(result, dict) and 'engines' in result:
+                engines_list.update(result['engines'])
+
+        # Get failed/unresponsive engines
+        failed_engines = set()
+        if result_container and hasattr(result_container, 'unresponsive_engines'):
+            for unresponsive in result_container.unresponsive_engines:
+                failed_engines.add(unresponsive.engine)
+
+        search_monitor.log_search(
+            query=query_text,
+            category=categories,
+            language=lang,
+            num_results=len(results),
+            response_time=response_time,
+            engines_list=sorted(list(engines_list)) if engines_list else None,
+            error=search_error
+        )
 
     if search_query.redirect_to_first_result and results:
         return redirect(results[0]['url'], 302)
@@ -1167,10 +1191,14 @@ def stats_errors():
 
 @app.route('/stats/searches', methods=['GET'])
 def stats_searches():
-    """Return search statistics (hourly, daily, weekly)."""
+    """Return search statistics (hourly, daily, weekly) with quality metrics."""
     hourly_stats = search_monitor.get_hourly_stats()
     daily_stats = search_monitor.get_daily_stats()
     weekly_stats = search_monitor.get_weekly_stats()
+    results_stats = search_monitor.get_daily_results_stats()
+    success_empty_stats = search_monitor.get_success_empty_stats()
+    engine_stats = search_monitor.get_engine_stats()
+    response_times = search_monitor.get_response_time_stats()
 
     return jsonify({
         'current': {
@@ -1178,9 +1206,17 @@ def stats_searches():
             'day': search_monitor.get_current_day_count(),
             'week': search_monitor.get_current_week_count(),
         },
-        'hourly': hourly_stats,
-        'daily': daily_stats,
-        'weekly': weekly_stats,
+        'volume': {
+            'hourly': hourly_stats,
+            'daily': daily_stats,
+            'weekly': weekly_stats,
+        },
+        'quality': {
+            'results_per_day': results_stats,
+            'success_empty_failed': success_empty_stats,
+            'engines_used': engine_stats,
+            'response_times': response_times,
+        },
         'totals': {
             'searches_today': search_monitor.get_current_day_count(),
             'searches_this_week': search_monitor.get_current_week_count(),

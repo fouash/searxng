@@ -34,15 +34,7 @@ ui:
   default_theme: simple
 
 engines:
-  # PRIORITY: Domain discovery engines optimized for company URL finding
-  # No rate-limiting, Saudi Arabia domain prioritization
-  - name: whois
-    engine: whois
-    shortcut: whois
-    categories: business
-    disabled: false
-    timeout: 15
-
+  # Domain discovery engines
   - name: crtsh
     engine: crtsh
     shortcut: crt
@@ -50,36 +42,46 @@ engines:
     disabled: false
     timeout: 10
 
-  # Disable all rate-limited and problematic engines
+  # Re-enable proven working engines
+  - name: bing
+    disabled: false
+    timeout: 6
+
+  - name: google
+    disabled: false
+    timeout: 6
+
+  - name: yahoo
+    disabled: false
+    timeout: 6
+
+  # Disable problematic engines
   - name: brave
     disabled: true
+
   - name: duckduckgo
     disabled: true
-  - name: google
-    disabled: true
+
   - name: google cse
     disabled: true
-  - name: bing
-    disabled: true
-  - name: bing_images
-    disabled: true
-  - name: bing_news
-    disabled: true
-  - name: bing_videos
-    disabled: true
+
   - name: startpage
     disabled: true
+
   - name: qwant
     disabled: true
-  - name: mojeek
+
+  - name: whois
     disabled: true
-  - name: marginalia
-    disabled: true
+
   - name: wikipedia
     disabled: true
+
   - name: wikidata
     disabled: true
+
   - name: ahmia
     disabled: true
+
   - name: torch
     disabled: true

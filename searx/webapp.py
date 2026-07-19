@@ -658,10 +658,34 @@ def search():
     except SearxParameterException as e:
         logger.exception('search error: SearxParameterException')
         search_error = str(e.message)
+        # Log failed search
+        if search_query:
+            search_monitor.log_search(
+                query=str(search_query.query),
+                category=','.join(search_query.categories) if search_query.categories else 'general',
+                language=str(search_query.lang),
+                num_results=0,
+                response_time=0,
+                engines_list=None,
+                error=f'SearxParameterException: {e.message}',
+                result_urls=[]
+            )
         return index_error(output_format, e.message), 400
     except Exception as e:  # pylint: disable=broad-except
         logger.exception(e, exc_info=True)
         search_error = 'search error'
+        # Log failed search
+        if search_query:
+            search_monitor.log_search(
+                query=str(search_query.query),
+                category=','.join(search_query.categories) if search_query.categories else 'general',
+                language=str(search_query.lang),
+                num_results=0,
+                response_time=0,
+                engines_list=None,
+                error=f'Exception: {str(e)[:50]}',
+                result_urls=[]
+            )
         return index_error(output_format, gettext('search error')), 500
 
     # 1. check if the result is a redirect for an external bang
@@ -1212,7 +1236,7 @@ def stats_searches():
     success_empty_stats = search_monitor.get_success_empty_stats()
     engine_stats = search_monitor.get_engine_stats()
     response_times = search_monitor.get_response_time_stats()
-    search_history = search_monitor.get_search_history(limit=100)
+    search_history = search_monitor.get_search_history(limit=300)
 
     stats_data = {
         'current': {

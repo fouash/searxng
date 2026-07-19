@@ -2,11 +2,15 @@
 """Search request monitoring and logging: hourly, daily, weekly."""
 
 import logging
+import os
 from datetime import datetime, timedelta
 from collections import defaultdict
 from threading import Lock
 
 logger = logging.getLogger(__name__)
+
+# Log file path for persistent search results
+SEARCH_LOG_FILE = os.environ.get('SEARXNG_LOG_DIR', '/var/log/searxng') + '/search_results.log'
 
 class SearchMonitor:
     """Track searches with detailed metrics: results, engines, response time, errors."""
@@ -24,6 +28,35 @@ class SearchMonitor:
         self.search_history = []
         self.max_history = max_history
         self.lock = Lock()
+        self._ensure_log_file()
+
+    def _ensure_log_file(self):
+        """Ensure log file directory exists and create file if needed."""
+        try:
+            log_dir = os.path.dirname(SEARCH_LOG_FILE)
+            if log_dir and not os.path.exists(log_dir):
+                os.makedirs(log_dir, exist_ok=True)
+            # Create file if it doesn't exist
+            if not os.path.exists(SEARCH_LOG_FILE):
+                with open(SEARCH_LOG_FILE, 'w') as f:
+                    f.write('Timestamp | Search Query | Results Count | First Result URL | Engines | Status\n')
+                    f.write('=' * 120 + '\n')
+        except Exception as e:
+            logger.warning(f"Could not ensure log file: {e}")
+
+    def _write_search_log(self, timestamp, query, num_results, first_url, engines, status):
+        """Write search result to persistent log file."""
+        try:
+            # Truncate long values for display
+            query_short = (query[:50] + '...') if len(query) > 50 else query
+            url_short = (first_url[:60] + '...') if len(first_url) > 60 else first_url
+
+            log_entry = f"{timestamp} | {query_short:52} | {num_results:3} | {url_short:63} | {engines:25} | {status}\n"
+
+            with open(SEARCH_LOG_FILE, 'a') as f:
+                f.write(log_entry)
+        except Exception as e:
+            logger.warning(f"Could not write to search log file: {e}")
 
     def log_search(self, query, category=None, language=None, engine=None, num_results=0,
                    response_time=0.0, engines_list=None, error=None, first_result_url=None):
@@ -96,6 +129,10 @@ class SearchMonitor:
             f"results:{num_results} | engines:{engines_str} | time:{response_time:.2f}s | "
             f"status:{status} | category={category} | language={language}"
         )
+
+        # Write to persistent log file
+        timestamp_str = now.strftime('%Y-%m-%d %H:%M:%S')
+        self._write_search_log(timestamp_str, query or 'N/A', num_results, first_result_url or '', engines_str, status)
 
         return hour_count
 

@@ -8,6 +8,7 @@ import os
 import sys
 import base64
 
+from datetime import datetime
 from timeit import default_timer
 from html import escape
 from io import StringIO
@@ -1191,7 +1192,12 @@ def stats_errors():
 
 @app.route('/stats/searches', methods=['GET'])
 def stats_searches():
-    """Return search statistics (hourly, daily, weekly) with quality metrics."""
+    """Return search statistics (hourly, daily, weekly) with quality metrics.
+
+    Supports both JSON (API) and HTML (Dashboard) views.
+    - JSON: /stats/searches or /stats/searches?format=json
+    - HTML: /stats/searches?format=html or Accept: text/html
+    """
     hourly_stats = search_monitor.get_hourly_stats()
     daily_stats = search_monitor.get_daily_stats()
     weekly_stats = search_monitor.get_weekly_stats()
@@ -1200,7 +1206,7 @@ def stats_searches():
     engine_stats = search_monitor.get_engine_stats()
     response_times = search_monitor.get_response_time_stats()
 
-    return jsonify({
+    stats_data = {
         'current': {
             'hour': search_monitor.get_current_hour_count(),
             'day': search_monitor.get_current_day_count(),
@@ -1222,7 +1228,398 @@ def stats_searches():
             'searches_this_week': search_monitor.get_current_week_count(),
             'total_all_time': sum(daily_stats.values()),
         }
-    })
+    }
+
+    # Check if HTML dashboard is requested
+    format_param = sxng_request.form.get('format', 'json')
+    accept_header = sxng_request.headers.get('Accept', '')
+
+    if format_param == 'html' or (format_param != 'json' and 'text/html' in accept_header):
+        return _render_searches_dashboard(stats_data)
+
+    return jsonify(stats_data)
+
+
+def _render_searches_dashboard(stats_data):
+    """Render an HTML dashboard for search statistics."""
+    import json as json_module
+
+    current = stats_data['current']
+    volume = stats_data['volume']
+    quality = stats_data['quality']
+    totals = stats_data['totals']
+
+    # Calculate summary metrics
+    daily_stats = volume['daily']
+    success_empty_failed = quality.get('success_empty_failed', {})
+    engines_used = quality.get('engines_used', {})
+    response_times = quality.get('response_times', {})
+
+    # Get latest day data
+    today_key = max(daily_stats.keys()) if daily_stats else None
+    today_data = success_empty_failed.get(today_key, {}) if today_key else {}
+    today_engines = engines_used.get(today_key, {}) if today_key else {}
+    today_response = response_times.get(today_key, {}) if today_key else {}
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SearXNG Search Analytics Dashboard</title>
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }}
+
+        .container {{
+            max-width: 1400px;
+            margin: 0 auto;
+        }}
+
+        .header {{
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }}
+
+        .header h1 {{
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }}
+
+        .header p {{
+            color: #666;
+            font-size: 14px;
+        }}
+
+        .metrics-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }}
+
+        .metric-card {{
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }}
+
+        .metric-card.success {{
+            border-left-color: #10b981;
+        }}
+
+        .metric-card.warning {{
+            border-left-color: #f59e0b;
+        }}
+
+        .metric-card.danger {{
+            border-left-color: #ef4444;
+        }}
+
+        .metric-label {{
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }}
+
+        .metric-value {{
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+        }}
+
+        .metric-subtext {{
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+        }}
+
+        .section {{
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }}
+
+        .section h2 {{
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }}
+
+        .table-responsive {{
+            overflow-x: auto;
+        }}
+
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+        }}
+
+        th {{
+            background: #f9f9f9;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #f0f0f0;
+        }}
+
+        td {{
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }}
+
+        tr:hover {{
+            background: #f9f9f9;
+        }}
+
+        .engine-badge {{
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-right: 8px;
+            margin-bottom: 4px;
+        }}
+
+        .success-badge {{
+            background: #10b981;
+        }}
+
+        .warning-badge {{
+            background: #f59e0b;
+        }}
+
+        .danger-badge {{
+            background: #ef4444;
+        }}
+
+        .progress-bar {{
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }}
+
+        .progress-fill {{
+            height: 100%;
+            background: #667eea;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }}
+
+        .chart-container {{
+            margin: 20px 0;
+        }}
+
+        .footer {{
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+            padding: 20px;
+            font-size: 12px;
+        }}
+
+        @media (max-width: 768px) {{
+            .metrics-grid {{
+                grid-template-columns: 1fr;
+            }}
+
+            .metric-value {{
+                font-size: 24px;
+            }}
+
+            .header {{
+                padding: 20px;
+            }}
+
+            .header h1 {{
+                font-size: 20px;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 SearXNG Search Analytics</h1>
+            <p>Real-time monitoring of domain discovery searches</p>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Searches This Hour</div>
+                <div class="metric-value">{current['hour']}</div>
+            </div>
+            <div class="metric-card success">
+                <div class="metric-label">Searches Today</div>
+                <div class="metric-value">{current['day']}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Searches This Week</div>
+                <div class="metric-value">{current['week']}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Total Results</div>
+                <div class="metric-value">{sum(quality.get('results_per_day', {}).values())}</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Search Quality Metrics</h2>
+            <div class="table-responsive">
+                <table>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Today</th>
+                        <th>Status</th>
+                    </tr>
+                    <tr>
+                        <td>Successful Searches</td>
+                        <td><span class="engine-badge success-badge">{today_data.get('successful', 0)}</span></td>
+                        <td>Searches with results</td>
+                    </tr>
+                    <tr>
+                        <td>Empty Results</td>
+                        <td><span class="engine-badge warning-badge">{today_data.get('empty', 0)}</span></td>
+                        <td>Searches with no results</td>
+                    </tr>
+                    <tr>
+                        <td>Failed Searches</td>
+                        <td><span class="engine-badge danger-badge">{today_data.get('failed', 0)}</span></td>
+                        <td>Searches with errors</td>
+                    </tr>
+                    <tr>
+                        <td>Avg Response Time</td>
+                        <td><strong>{today_response.get('avg', 0):.3f}s</strong></td>
+                        <td>Min: {today_response.get('min', 0):.3f}s | Max: {today_response.get('max', 0):.3f}s</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ Engine Performance</h2>
+            <div class="table-responsive">
+                <table>
+                    <tr>
+                        <th>Engine</th>
+                        <th>Times Used (Today)</th>
+                        <th>Percentage</th>
+                    </tr>
+"""
+
+    total_engine_calls = sum(today_engines.values()) if today_engines else 0
+
+    for engine_name in sorted(today_engines.keys()):
+        count = today_engines[engine_name]
+        percentage = (count / total_engine_calls * 100) if total_engine_calls > 0 else 0
+        html += f"""                    <tr>
+                        <td><span class="engine-badge">{engine_name.upper()}</span></td>
+                        <td><strong>{count}</strong></td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {percentage}%"></div>
+                            </div>
+                            {percentage:.1f}%
+                        </td>
+                    </tr>
+"""
+
+    html += """                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📈 Search Volume (Last 7 Days)</h2>
+            <div class="table-responsive">
+                <table>
+                    <tr>
+                        <th>Date</th>
+                        <th>Searches</th>
+                        <th>Results</th>
+                        <th>Successful</th>
+                        <th>Empty</th>
+                        <th>Failed</th>
+                    </tr>
+"""
+
+    for date_key in sorted(daily_stats.keys(), reverse=True):
+        count = daily_stats[date_key]
+        results_count = quality.get('results_per_day', {}).get(date_key, 0)
+        day_quality = success_empty_failed.get(date_key, {})
+        html += f"""                    <tr>
+                        <td><strong>{date_key}</strong></td>
+                        <td>{count}</td>
+                        <td>{results_count}</td>
+                        <td><span class="engine-badge success-badge">{day_quality.get('successful', 0)}</span></td>
+                        <td><span class="engine-badge warning-badge">{day_quality.get('empty', 0)}</span></td>
+                        <td><span class="engine-badge danger-badge">{day_quality.get('failed', 0)}</span></td>
+                    </tr>
+"""
+
+    html += f"""                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Totals Summary</h2>
+            <div class="table-responsive">
+                <table>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Count</th>
+                    </tr>
+                    <tr>
+                        <td>Today</td>
+                        <td><strong>{totals['searches_today']}</strong> searches</td>
+                    </tr>
+                    <tr>
+                        <td>This Week</td>
+                        <td><strong>{totals['searches_this_week']}</strong> searches</td>
+                    </tr>
+                    <tr>
+                        <td>All Time</td>
+                        <td><strong>{totals['total_all_time']}</strong> searches</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>SearXNG Search Analytics Dashboard | Last updated: <strong>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</strong></p>
+            <p>JSON API available at: <code>/stats/searches?format=json</code></p>
+        </div>
+    </div>
+</body>
+</html>"""
+
+    return Response(html, mimetype='text/html')
 
 
 @app.route('/metrics')

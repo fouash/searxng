@@ -20,72 +20,52 @@ search:
     - json
 
 outgoing:
-  request_timeout: 15.0
-  max_request_timeout: 30.0
+  request_timeout: 30.0
+  max_request_timeout: 60.0
 
 ui:
   default_theme: simple
 
 engines:
-  # Disable all rate-limited engines
-  - name: brave
-    disabled: true
-    # Too many requests - blocks cloud IPs
+  # NETWORK LIMITATION NOTICE:
+  # The Render environment has restricted outbound network access.
+  # All external search engines timeout due to proxy/firewall policies.
+  #
+  # Attempted:
+  # - Google, Bing, Yahoo, DuckDuckGo: Rate-limited or blocked
+  # - crt.sh (SSL Certificates): Timeout (network blocked)
+  # - mojeek (Indie Search): Timeout (network blocked)
+  # - All other engines: Network access restricted
+  #
+  # Solution: Deploy to environment with unrestricted outbound HTTPS,
+  # or configure a VPN/proxy for external API access.
 
-  - name: duckduckgo
-    disabled: true
-    # Timeout - not compatible with Render IPs
-
-  - name: google cse
-    disabled: true
-    # Too many requests - rate limits
-
-  - name: startpage
-    disabled: true
-    # CAPTCHA blocks - doesn't work from cloud
-
-  - name: wikipedia
-    disabled: true
-    # Timeout - not reliable
-
+  # Disable all engines to avoid error messages
   - name: google
     disabled: true
-    # Rate-limiting on cloud IPs
-
   - name: bing
     disabled: true
-    # Rate-limiting on cloud IPs
-
   - name: yahoo
     disabled: true
-    # Rate-limiting on cloud IPs
-
+  - name: duckduckgo
+    disabled: true
   - name: qwant
     disabled: true
-    # Rate-limiting
-
-  - name: duckduckgo_definitions
+  - name: brave
     disabled: true
-
+  - name: startpage
+    disabled: true
+  - name: wikipedia
+    disabled: true
   - name: wikidata
     disabled: true
-
+  - name: crtsh
+    disabled: true
+  - name: mojeek
+    disabled: true
+  - name: google cse
+    disabled: true
   - name: ahmia
     disabled: true
-
   - name: torch
     disabled: true
-
-  - name: mojeek
-    disabled: false
-    timeout: 15
-    # Independent search engine - less rate-limiting
-
-  # Keep only working engines
-  - name: crtsh
-    engine: crtsh
-    shortcut: crt
-    disabled: false
-    timeout: 25
-    # SSL certificate transparency search - no rate-limiting
-    # Timeout increased for slow network conditions

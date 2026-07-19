@@ -53,6 +53,9 @@ COPY --chown=977:977 ./container/entrypoint.sh \
                       ./container/limiter.toml \
                       ./
 
+# Copy Saudi domains database if available
+COPY --chown=977:977 data/domains/ ./data/domains/ 2>/dev/null || true
+
 RUN chmod +x ./render-entrypoint.sh
 
 ARG VERSION="unknown"

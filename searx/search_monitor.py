@@ -29,6 +29,7 @@ class SearchMonitor:
         self.max_history = max_history
         self.lock = Lock()
         self._ensure_log_file()
+        self._load_recent_searches_from_log()
 
     def _ensure_log_file(self):
         """Ensure log file directory exists and create file if needed."""
@@ -43,6 +44,83 @@ class SearchMonitor:
                     f.write('=' * 120 + '\n')
         except Exception as e:
             logger.warning(f"Could not ensure log file: {e}")
+
+    def _load_recent_searches_from_log(self):
+        """Load recent searches from log file into memory on startup."""
+        try:
+            if not os.path.exists(SEARCH_LOG_FILE):
+                return
+
+            # Parse log file and extract search records
+            with open(SEARCH_LOG_FILE, 'r') as f:
+                lines = f.readlines()
+
+            current_search = None
+            search_urls = []
+
+            for line in reversed(lines[-1000:]):  # Read last 1000 lines in reverse
+                line = line.strip()
+
+                # Look for search headers (lines starting with [)
+                if line.startswith('['):
+                    if current_search and search_urls:
+                        # Add previous search
+                        self.search_history.insert(0, {
+                            'timestamp': current_search.get('timestamp', ''),
+                            'query': current_search.get('query', 'N/A'),
+                            'num_results': current_search.get('num_results', 0),
+                            'result_urls': search_urls[:10],
+                            'engines': current_search.get('engines', 'none'),
+                            'status': current_search.get('status', 'OK'),
+                        })
+                        search_urls = []
+
+                    # Parse header: [2026-07-19 15:23:45] Query: aramco | Results: 12 | Engines: crtsh,whois | Status: OK
+                    try:
+                        import re
+                        match = re.search(r'\[(.+?)\].*Query:\s*(.+?)\s*\|\s*Results:\s*(\d+)\s*\|\s*Engines:\s*(.+?)\s*\|\s*Status:\s*(.+?)$', line)
+                        if match:
+                            current_search = {
+                                'timestamp': match.group(1),
+                                'query': match.group(2),
+                                'num_results': int(match.group(3)),
+                                'engines': match.group(4),
+                                'status': match.group(5),
+                            }
+                    except Exception:
+                        pass
+
+                # Look for URL lines (lines starting with number like "1." or "2.")
+                elif line and current_search and line[0].isdigit() and '.' in line[:3]:
+                    try:
+                        # Extract URL from line like "1. https://..."
+                        parts = line.split('. ', 1)
+                        if len(parts) == 2:
+                            url = parts[1]
+                            if url.startswith('http'):
+                                search_urls.insert(0, url)
+                    except Exception:
+                        pass
+
+            # Add the last search
+            if current_search and search_urls:
+                self.search_history.insert(0, {
+                    'timestamp': current_search.get('timestamp', ''),
+                    'query': current_search.get('query', 'N/A'),
+                    'num_results': current_search.get('num_results', 0),
+                    'result_urls': search_urls[:10],
+                    'engines': current_search.get('engines', 'none'),
+                    'status': current_search.get('status', 'OK'),
+                })
+
+            # Keep only recent searches
+            if len(self.search_history) > self.max_history:
+                self.search_history = self.search_history[-self.max_history:]
+
+            logger.info(f"Loaded {len(self.search_history)} recent searches from log file")
+
+        except Exception as e:
+            logger.warning(f"Could not load searches from log file: {e}")
 
     def _write_search_log(self, timestamp, query, num_results, result_urls, engines, status):
         """Write search results to persistent log file.

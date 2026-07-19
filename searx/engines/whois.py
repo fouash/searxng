@@ -35,7 +35,10 @@ WHOIS_SERVERS = {
     'fr': 'whois.afnic.fr',
 }
 
-COMMON_TLDS = ['com', 'net', 'org', 'co', 'sa', 'ae', 'io']
+# Saudi Arabia domains checked first for priority, then other Middle East, then global
+SAUDI_PRIORITY_TLDS = ['sa', 'com.sa']  # Saudi Arabia TLDs (checked first, highest priority)
+REGIONAL_TLDS = ['ae', 'ae.org', 'io', 'co']  # Middle East and alternative TLDs
+COMMON_TLDS = ['sa', 'com.sa', 'ae', 'com', 'net', 'org', 'io', 'co']  # Search order
 
 
 def query_whois_server(domain, tld):
@@ -92,7 +95,7 @@ def request(query, params):
 
 
 def response(resp):
-    """Parse WHOIS response."""
+    """Parse WHOIS response with Saudi Arabia priority."""
     results = []
     query = resp.search_params.get('whois_query', '')
 
@@ -105,6 +108,7 @@ def response(resp):
     if is_domain:
         domains_to_check.append(query)
     else:
+        # Priority: Saudi first, then regional, then global
         for tld in COMMON_TLDS:
             domains_to_check.append(f'{query.split()[0].lower()}.{tld}')
 
@@ -118,7 +122,12 @@ def response(resp):
         if len(parts) < 2:
             continue
 
-        tld = parts[-1]
+        # Determine TLD for scoring (handle .com.sa case)
+        if domain.endswith('.com.sa'):
+            tld = 'com.sa'
+        else:
+            tld = parts[-1]
+
         seen_domains.add(domain)
 
         whois_data = query_whois_server(domain, tld)
@@ -138,12 +147,20 @@ def response(resp):
             if expires:
                 content += f' | Expires: {expires}'
 
+            # Boost score for Saudi Arabia domains
+            if tld in SAUDI_PRIORITY_TLDS:
+                score = 1.0  # Highest priority for .sa and .com.sa
+            elif tld in REGIONAL_TLDS:
+                score = 0.95  # Regional TLDs secondary
+            else:
+                score = 0.85  # Global TLDs lower priority
+
             results.append({
                 'title': domain,
                 'url': f'https://{domain}',
                 'content': content,
                 'engine': 'whois',
-                'score': 0.9,
+                'score': score,
             })
 
     return results

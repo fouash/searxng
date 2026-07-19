@@ -11,6 +11,10 @@ categories = ['general', 'business']
 paging = False
 timeout = 10
 
+# Saudi Arabia domain priority settings
+SAUDI_TLDS = {'.sa': 1.0, '.com.sa': 1.0, '.gov.sa': 1.0, '.net.sa': 1.0}
+REGIONAL_TLDS = {'.ae': 0.95, '.com.ae': 0.95, '.co': 0.9}
+
 about = {
     'website': 'https://crt.sh',
     'wikidata_id': None,
@@ -34,7 +38,7 @@ def request(query, params):
 
 
 def response(resp):
-    """Parse crt.sh JSON response."""
+    """Parse crt.sh JSON response with Saudi Arabia domain priority."""
     results = []
 
     try:
@@ -60,12 +64,25 @@ def response(resp):
 
             if domain not in seen_domains:
                 seen_domains.add(domain)
+
+                # Calculate score based on Saudi Arabia priority
+                score = 0.8  # Default score
+                for tld, tld_score in SAUDI_TLDS.items():
+                    if domain.endswith(tld):
+                        score = tld_score
+                        break
+                else:
+                    for tld, tld_score in REGIONAL_TLDS.items():
+                        if domain.endswith(tld):
+                            score = tld_score
+                            break
+
                 results.append({
                     'title': domain,
                     'url': f'https://{domain}',
                     'content': f'SSL certificate found for {domain}',
                     'engine': 'crtsh',
-                    'score': 1.0,
+                    'score': score,
                 })
 
     return results

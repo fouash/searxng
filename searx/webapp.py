@@ -1665,20 +1665,22 @@ def _render_searches_dashboard(stats_data):
 
     # Add search history to the HTML
     search_history = stats_data.get('history', [])
-    for record in search_history:
-        timestamp = record.get('timestamp', '')[:19]  # Format: YYYY-MM-DD HH:MM:SS
-        query = record.get('query', 'N/A')
-        num_results = record.get('num_results', 0)
-        first_url = record.get('first_result_url', '')
-        engines = record.get('engines', 'none')
-        response_time = record.get('response_time', 0)
-        status = record.get('status', 'OK')
 
-        # Truncate long URLs for display
-        display_url = first_url[:60] + '...' if len(first_url) > 60 else first_url
-        status_badge = f'<span class="engine-badge success-badge">{status}</span>' if status == 'OK' else f'<span class="engine-badge danger-badge">{status}</span>'
+    if search_history:
+        for record in search_history:
+            timestamp = record.get('timestamp', '')[:19]  # Format: YYYY-MM-DD HH:MM:SS
+            query = record.get('query', 'N/A')
+            num_results = record.get('num_results', 0)
+            first_url = record.get('first_result_url', '')
+            engines = record.get('engines', 'none')
+            response_time = record.get('response_time', 0)
+            status = record.get('status', 'OK')
 
-        html += f"""                    <tr>
+            # Truncate long URLs for display
+            display_url = first_url[:60] + '...' if len(first_url) > 60 else first_url
+            status_badge = f'<span class="engine-badge success-badge">{status}</span>' if status == 'OK' else f'<span class="engine-badge danger-badge">{status}</span>'
+
+            html += f"""                    <tr>
                         <td><small>{timestamp}</small></td>
                         <td><strong>{query[:40]}</strong></td>
                         <td>{num_results}</td>
@@ -1686,6 +1688,15 @@ def _render_searches_dashboard(stats_data):
                         <td><small>{engines}</small></td>
                         <td><small>{response_time:.2f}s</small></td>
                         <td>{status_badge}</td>
+                    </tr>
+"""
+    else:
+        html += """                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 30px; color: #999;">
+                            <strong>No searches yet</strong><br>
+                            <small>Perform searches on the SearXNG instance to see them appear here.<br>
+                            Try searching for a company like "aramco" or "sabic".</small>
+                        </td>
                     </tr>
 """
 

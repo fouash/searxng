@@ -34,18 +34,20 @@ ui:
   default_theme: simple
 
 engines:
-  # Domain discovery engines for company URL finding (no rate limits)
+  # Domain discovery engines for company URL finding (Saudi Arabia priority)
   - name: whois
     engine: whois
     shortcut: whois
     categories: business
     disabled: false
+    # Saudi TLDs checked first: .sa, .com.sa get highest priority scores
 
   - name: crtsh
     engine: crtsh
     shortcut: crt
     categories: business
     disabled: false
+    # Certificate Transparency search: Saudi domains (.sa, .com.sa) ranked highest
 
   # These fail at startup in containerised deployments — disable to clean logs.
   - name: wikidata

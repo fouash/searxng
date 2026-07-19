@@ -719,6 +719,11 @@ def search():
             for unresponsive in result_container.unresponsive_engines:
                 failed_engines.add(unresponsive.engine)
 
+        # Get first result URL
+        first_result_url = ''
+        if results and isinstance(results[0], dict) and 'url' in results[0]:
+            first_result_url = results[0]['url']
+
         search_monitor.log_search(
             query=query_text,
             category=categories,
@@ -726,7 +731,8 @@ def search():
             num_results=len(results),
             response_time=response_time,
             engines_list=sorted(list(engines_list)) if engines_list else None,
-            error=search_error
+            error=search_error,
+            first_result_url=first_result_url
         )
 
     if search_query.redirect_to_first_result and results:
@@ -1205,6 +1211,7 @@ def stats_searches():
     success_empty_stats = search_monitor.get_success_empty_stats()
     engine_stats = search_monitor.get_engine_stats()
     response_times = search_monitor.get_response_time_stats()
+    search_history = search_monitor.get_search_history(limit=100)
 
     stats_data = {
         'current': {
@@ -1223,6 +1230,7 @@ def stats_searches():
             'engines_used': engine_stats,
             'response_times': response_times,
         },
+        'history': search_history,
         'totals': {
             'searches_today': search_monitor.get_current_day_count(),
             'searches_this_week': search_monitor.get_current_week_count(),
@@ -1611,15 +1619,140 @@ def _render_searches_dashboard(stats_data):
             </div>
         </div>
 
+        <div class="section">
+            <h2>🔍 Recent Search History</h2>
+            <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button onclick="downloadCSV()" style="padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">📥 Download CSV</button>
+                <button onclick="copyToClipboard()" style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">📋 Copy to Clipboard</button>
+            </div>
+            <div class="table-responsive">
+                <table id="searchHistoryTable">
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Search Term</th>
+                        <th>Results</th>
+                        <th>First Result URL</th>
+                        <th>Engines</th>
+                        <th>Response Time</th>
+                        <th>Status</th>
+                    </tr>
+"""
+
+    # Add search history to the HTML
+    search_history = stats_data.get('history', [])
+    for record in search_history:
+        timestamp = record.get('timestamp', '')[:19]  # Format: YYYY-MM-DD HH:MM:SS
+        query = record.get('query', 'N/A')
+        num_results = record.get('num_results', 0)
+        first_url = record.get('first_result_url', '')
+        engines = record.get('engines', 'none')
+        response_time = record.get('response_time', 0)
+        status = record.get('status', 'OK')
+
+        # Truncate long URLs for display
+        display_url = first_url[:60] + '...' if len(first_url) > 60 else first_url
+        status_badge = f'<span class="engine-badge success-badge">{status}</span>' if status == 'OK' else f'<span class="engine-badge danger-badge">{status}</span>'
+
+        html += f"""                    <tr>
+                        <td><small>{timestamp}</small></td>
+                        <td><strong>{query[:40]}</strong></td>
+                        <td>{num_results}</td>
+                        <td><a href="{first_url}" target="_blank" title="{first_url}" style="color: #667eea; text-decoration: none;">{display_url}</a></td>
+                        <td><small>{engines}</small></td>
+                        <td><small>{response_time:.2f}s</small></td>
+                        <td>{status_badge}</td>
+                    </tr>
+"""
+
+    html += """                </table>
+            </div>
+        </div>
+
         <div class="footer">
-            <p>SearXNG Search Analytics Dashboard | Last updated: <strong>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</strong></p>
+            <p>SearXNG Search Analytics Dashboard | Last updated: <strong>{datetime_str}</strong></p>
             <p>JSON API available at: <code>/stats/searches?format=json</code></p>
         </div>
     </div>
+
+    <script>
+        function downloadCSV() {{
+            const table = document.getElementById('searchHistoryTable');
+            let csv = [];
+
+            // Get headers
+            const headers = Array.from(table.querySelectorAll('thead tr th, tr:first-child th'))
+                .map(th => '"' + (th.textContent || '').trim() + '"');
+            if (headers.length > 0) {{
+                csv.push(headers.join(','));
+            }}
+
+            // Get rows
+            table.querySelectorAll('tbody tr, tr:not(:first-child)').forEach(tr => {{
+                const cells = Array.from(tr.querySelectorAll('td'))
+                    .map(td => {{
+                        let text = td.textContent.trim();
+                        // Extract URL from links
+                        const link = td.querySelector('a');
+                        if (link) text = link.href;
+                        // Escape quotes and wrap in quotes
+                        return '"' + text.replace(/"/g, '""') + '"';
+                    }});
+                if (cells.length > 0) {{
+                    csv.push(cells.join(','));
+                }}
+            }});
+
+            const csvContent = csv.join('\\n');
+            const blob = new Blob([csvContent], {{ type: 'text/csv;charset=utf-8;' }});
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'searxng_searches_' + new Date().toISOString().split('T')[0] + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }}
+
+        function copyToClipboard() {{
+            const table = document.getElementById('searchHistoryTable');
+            let tsv = [];
+
+            // Get headers
+            const headers = Array.from(table.querySelectorAll('thead tr th, tr:first-child th'))
+                .map(th => (th.textContent || '').trim());
+            if (headers.length > 0) {{
+                tsv.push(headers.join('\\t'));
+            }}
+
+            // Get rows
+            table.querySelectorAll('tbody tr, tr:not(:first-child)').forEach(tr => {{
+                const cells = Array.from(tr.querySelectorAll('td'))
+                    .map(td => {{
+                        let text = td.textContent.trim();
+                        // Extract URL from links
+                        const link = td.querySelector('a');
+                        if (link) text = link.href;
+                        return text;
+                    }});
+                if (cells.length > 0) {{
+                    tsv.push(cells.join('\\t'));
+                }}
+            }});
+
+            const content = tsv.join('\\n');
+            navigator.clipboard.writeText(content).then(() => {{
+                alert('Copied to clipboard! Paste into Excel or Google Sheets.');
+            }}).catch(err => {{
+                console.error('Copy failed:', err);
+                alert('Copy failed. Please try the CSV download instead.');
+            }});
+        }}
+    </script>
 </body>
 </html>"""
 
-    return Response(html, mimetype='text/html')
+    return Response(html.format(datetime_str=datetime.now().strftime('%Y-%m-%d %H:%M:%S')), mimetype='text/html')
 
 
 @app.route('/metrics')

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class SearchMonitor:
     """Track searches with detailed metrics: results, engines, response time, errors."""
 
-    def __init__(self):
+    def __init__(self, max_history=500):
         self.searches_per_hour = defaultdict(int)
         self.searches_per_day = defaultdict(int)
         self.searches_per_week = defaultdict(int)
@@ -21,10 +21,12 @@ class SearchMonitor:
         self.failed_searches = defaultdict(int)
         self.response_times = defaultdict(list)
         self.engines_used = defaultdict(lambda: defaultdict(int))
+        self.search_history = []
+        self.max_history = max_history
         self.lock = Lock()
 
     def log_search(self, query, category=None, language=None, engine=None, num_results=0,
-                   response_time=0.0, engines_list=None, error=None):
+                   response_time=0.0, engines_list=None, error=None, first_result_url=None):
         """Log a search request with detailed metrics.
 
         Args:
@@ -36,6 +38,7 @@ class SearchMonitor:
             response_time: Response time in seconds
             engines_list: List of engines that returned results (e.g., ['crtsh', 'whois'])
             error: Error message if search failed
+            first_result_url: URL of the first result returned
         """
         now = datetime.now()
         hour_key = now.strftime('%Y-%m-%d %H:00')
@@ -62,6 +65,24 @@ class SearchMonitor:
             if engines_list:
                 for eng in engines_list:
                     self.engines_used[day_key][eng] += 1
+
+            # Store search in history
+            search_record = {
+                'timestamp': now.isoformat(),
+                'query': query or 'N/A',
+                'category': category or 'general',
+                'language': language or 'all',
+                'num_results': num_results,
+                'first_result_url': first_result_url or '',
+                'response_time': response_time,
+                'engines': ','.join(engines_list) if engines_list else 'none',
+                'status': 'OK' if not error else f'ERROR: {error[:30]}',
+            }
+            self.search_history.append(search_record)
+
+            # Keep only recent searches
+            if len(self.search_history) > self.max_history:
+                self.search_history = self.search_history[-self.max_history:]
 
             hour_count = self.searches_per_hour[hour_key]
             day_count = self.searches_per_day[day_key]
@@ -202,6 +223,12 @@ class SearchMonitor:
                 except ValueError:
                     pass
             return stats
+
+    def get_search_history(self, limit=None):
+        """Get recent search history (most recent first)."""
+        with self.lock:
+            history = list(reversed(self.search_history))
+            return history[:limit] if limit else history
 
     def get_all_stats(self):
         """Get all statistics including quality metrics."""

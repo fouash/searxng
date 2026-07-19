@@ -44,22 +44,40 @@ class SearchMonitor:
         except Exception as e:
             logger.warning(f"Could not ensure log file: {e}")
 
-    def _write_search_log(self, timestamp, query, num_results, first_url, engines, status):
-        """Write search result to persistent log file."""
-        try:
-            # Truncate long values for display
-            query_short = (query[:50] + '...') if len(query) > 50 else query
-            url_short = (first_url[:60] + '...') if len(first_url) > 60 else first_url
+    def _write_search_log(self, timestamp, query, num_results, result_urls, engines, status):
+        """Write search results to persistent log file.
 
-            log_entry = f"{timestamp} | {query_short:52} | {num_results:3} | {url_short:63} | {engines:25} | {status}\n"
+        Args:
+            timestamp: Search timestamp
+            query: Search query
+            num_results: Total number of results
+            result_urls: List of result URLs (up to 10)
+            engines: Engines used
+            status: Search status
+        """
+        try:
+            query_short = (query[:50] + '...') if len(query) > 50 else query
+
+            # Write header for this search
+            header = f"\n{'='*140}\n"
+            header += f"[{timestamp}] Query: {query} | Results: {num_results} | Engines: {engines} | Status: {status}\n"
+            header += f"{'='*140}\n"
 
             with open(SEARCH_LOG_FILE, 'a') as f:
-                f.write(log_entry)
+                f.write(header)
+
+                # Write up to 10 result URLs
+                if result_urls:
+                    for idx, url in enumerate(result_urls[:10], 1):
+                        f.write(f"{idx:2}. {url}\n")
+                else:
+                    f.write("   (No results found)\n")
+
         except Exception as e:
             logger.warning(f"Could not write to search log file: {e}")
 
     def log_search(self, query, category=None, language=None, engine=None, num_results=0,
-                   response_time=0.0, engines_list=None, error=None, first_result_url=None):
+                   response_time=0.0, engines_list=None, error=None, first_result_url=None, result_urls=None):
         """Log a search request with detailed metrics.
 
         Args:
@@ -71,7 +89,8 @@ class SearchMonitor:
             response_time: Response time in seconds
             engines_list: List of engines that returned results (e.g., ['crtsh', 'whois'])
             error: Error message if search failed
-            first_result_url: URL of the first result returned
+            first_result_url: URL of the first result returned (deprecated, use result_urls)
+            result_urls: List of result URLs (up to 10 will be logged)
         """
         now = datetime.now()
         hour_key = now.strftime('%Y-%m-%d %H:00')
@@ -100,13 +119,15 @@ class SearchMonitor:
                     self.engines_used[day_key][eng] += 1
 
             # Store search in history
+            first_url = result_urls[0] if result_urls else (first_result_url or '')
             search_record = {
                 'timestamp': now.isoformat(),
                 'query': query or 'N/A',
                 'category': category or 'general',
                 'language': language or 'all',
                 'num_results': num_results,
-                'first_result_url': first_result_url or '',
+                'first_result_url': first_url,
+                'result_urls': result_urls or [],
                 'response_time': response_time,
                 'engines': ','.join(engines_list) if engines_list else 'none',
                 'status': 'OK' if not error else f'ERROR: {error[:30]}',
@@ -132,7 +153,8 @@ class SearchMonitor:
 
         # Write to persistent log file
         timestamp_str = now.strftime('%Y-%m-%d %H:%M:%S')
-        self._write_search_log(timestamp_str, query or 'N/A', num_results, first_result_url or '', engines_str, status)
+        urls_to_log = result_urls or (([first_result_url] if first_result_url else []))
+        self._write_search_log(timestamp_str, query or 'N/A', num_results, urls_to_log, engines_str, status)
 
         return hour_count
 

@@ -719,10 +719,11 @@ def search():
             for unresponsive in result_container.unresponsive_engines:
                 failed_engines.add(unresponsive.engine)
 
-        # Get first result URL
-        first_result_url = ''
-        if results and isinstance(results[0], dict) and 'url' in results[0]:
-            first_result_url = results[0]['url']
+        # Get first 10 result URLs
+        result_urls = []
+        for result in results[:10]:
+            if isinstance(result, dict) and 'url' in result:
+                result_urls.append(result['url'])
 
         search_monitor.log_search(
             query=query_text,
@@ -732,7 +733,7 @@ def search():
             response_time=response_time,
             engines_list=sorted(list(engines_list)) if engines_list else None,
             error=search_error,
-            first_result_url=first_result_url
+            result_urls=result_urls
         )
 
     if search_query.redirect_to_first_result and results:

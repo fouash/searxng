@@ -1,0 +1,90 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-07-20T00:00:00Z",
+  "company_mappings": [
+    {
+      "ar_name": "أرامكو",
+      "ar_names": ["ارامكو", "أرامكو", "الأرامكو", "أرامكو السعودية"],
+      "en_name": "Aramco",
+      "en_names": ["aramco", "saudi aramco"],
+      "domain_keyword": "aramco",
+      "category": "oil_gas"
+    },
+    {
+      "ar_name": "الاتصالات السعودية",
+      "ar_names": ["اتصالات", "الاتصالات السعودية", "ستك", "stc"],
+      "en_name": "STC",
+      "en_names": ["stc", "saudi telecom"],
+      "domain_keyword": "stc",
+      "category": "telecom"
+    },
+    {
+      "ar_name": "موبايلي",
+      "ar_names": ["موبايلي", "الموبايلي"],
+      "en_name": "Mobily",
+      "en_names": ["mobily"],
+      "domain_keyword": "mobily",
+      "category": "telecom"
+    },
+    {
+      "ar_name": "زين",
+      "ar_names": ["زين", "زين السعودية"],
+      "en_name": "Zain",
+      "en_names": ["zain"],
+      "domain_keyword": "zain",
+      "category": "telecom"
+    },
+    {
+      "ar_name": "البنك الأهلي",
+      "ar_names": ["البنك الأهلي", "الأهلي", "ncb"],
+      "en_name": "NCB",
+      "en_names": ["ncb", "national commercial bank"],
+      "domain_keyword": "ncb",
+      "category": "banking"
+    },
+    {
+      "ar_name": "البنك الراجحي",
+      "ar_names": ["البنك الراجحي", "الراجحي", "rajhi"],
+      "en_name": "AlRajhi",
+      "en_names": ["rajhi", "alrajhi"],
+      "domain_keyword": "rajhi",
+      "category": "banking"
+    },
+    {
+      "ar_name": "إعادة التأمين السعودية",
+      "ar_names": ["إعادة التأمين السعودية", "تأمين السعودية", "sati"],
+      "en_name": "SATI",
+      "en_names": ["sati"],
+      "domain_keyword": "sati",
+      "category": "insurance"
+    },
+    {
+      "ar_name": "ناديك",
+      "ar_names": ["ناديك", "الناديك"],
+      "en_name": "NADEC",
+      "en_names": ["nadec"],
+      "domain_keyword": "nadec",
+      "category": "agriculture"
+    },
+    {
+      "ar_name": "سابك",
+      "ar_names": ["سابك", "السابك"],
+      "en_name": "SABIC",
+      "en_names": ["sabic"],
+      "domain_keyword": "sabic",
+      "category": "chemicals"
+    },
+    {
+      "ar_name": "الخطوط السعودية",
+      "ar_names": ["الخطوط السعودية", "خطوط سعودية", "سامة"],
+      "en_name": "Saudia Airways",
+      "en_names": ["saudia", "saudi airways"],
+      "domain_keyword": "saudia",
+      "category": "aviation"
+    }
+  ],
+  "transliteration_rules": {
+    "description": "Basic Arabic-to-English transliteration for common company names",
+    "note": "For fuzzy matching and alternative spellings"
+  }
+}

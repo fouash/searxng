@@ -53,9 +53,8 @@ COPY --chown=977:977 ./container/entrypoint.sh \
                       ./container/limiter.toml \
                       ./
 
-# Copy Saudi company domains database and mappings (required for offline search)
-COPY --chown=977:977 ./data/domains/ ./data/domains/
-
+# Create data/domains directory for Saudi company domains and mappings
+# Files will be auto-downloaded at startup if missing
 RUN chmod +x ./render-entrypoint.sh && mkdir -p ./data/domains
 
 ARG VERSION="unknown"

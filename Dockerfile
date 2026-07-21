@@ -53,10 +53,10 @@ COPY --chown=977:977 ./container/entrypoint.sh \
                       ./container/limiter.toml \
                       ./
 
-RUN chmod +x ./render-entrypoint.sh && mkdir -p ./data/domains
+# Copy Saudi company domains database and mappings (required for offline search)
+COPY --chown=977:977 ./data/domains/ ./data/domains/
 
-# Copy Saudi domains database if it exists (this is optional)
-# If the directory doesn't exist in build context, Docker will create an empty one above
+RUN chmod +x ./render-entrypoint.sh && mkdir -p ./data/domains
 
 ARG VERSION="unknown"
 ENV __SEARXNG_VERSION="$VERSION" \

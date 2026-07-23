@@ -65,7 +65,7 @@ engines:
 
   - name: archive.today
     engine: archive_today
-    shortcut: arx
+    shortcut: atd
     categories: web
     disabled: true
     timeout: 5

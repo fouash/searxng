@@ -528,35 +528,209 @@ health_check:
 
 ---
 
-## Proxy Strategy
+## Comprehensive Proxy Strategy
 
-### DO Use:
-- ✅ **Cloudflare WARP** - Low latency, easy to deploy
-- ✅ **SOCKS5 rotating** - Better than HTTP for engine resistance
-- ✅ **Residential proxies** (paid) - Highest success rate
-- ✅ **Tor SOCKS5** - Good for IP-rate-limited engines
+### Tier 1: Recommended (Production)
+- ✅ **Cloudflare WARP** - Low latency, easy deployment, reliable
+- ✅ **SOCKS5 rotating proxies** - Better engine resistance than HTTP
+- ✅ **Residential rotating proxies** - Highest success rate
+- ✅ **ISP/static residential proxies** - Consistent, reliable
+- ✅ **Mobile (4G/5G) rotating proxies** - Hardest to block
+- ✅ **Datacenter proxies (premium)** - Speed + reliability balance
 
-### DON'T Use:
+### Tier 2: Geo-Unblocking
+- ✅ **Country-specific exit nodes** - CN, RU, KR, JP, DE, US
+- ✅ **Multi-region proxy pools** - Global coverage
+- ✅ **GeoDNS-aware proxies** - Location-aware routing
+- ✅ **ASN-targeted proxies** - Different ISP networks
+
+### Tier 3: Privacy & Anti-Rate-Limit
+- ✅ **Tor SOCKS5** - IP-rate-limited engines
+- ✅ **Tor bridges** (obfs4, Snowflake) - Tor unblocking
+- ✅ **Shadowsocks** - Lightweight encryption
+- ✅ **V2Ray / Xray** - Configurable protocols
+- ✅ **WireGuard tunnels** - Modern VPN
+- ✅ **OpenVPN gateways** - Mature, reliable
+
+### Tier 4: Cloud-Based
+- ✅ **Cloudflare Tunnel** - Secure SearXNG exposure
+- ✅ **Tailscale Exit Nodes** - Mesh VPN
+- ✅ **Headscale + Tailscale mesh** - Self-hosted mesh
+- ✅ **Self-hosted VPS proxy fleet** - Complete control
+- ✅ **Kubernetes egress gateways** - Enterprise scale
+
+### Tier 5: Enterprise Providers
+- ✅ **Bright Data** - Premium residential
+- ✅ **Oxylabs** - High-performance
+- ✅ **NetNut** - Sticky sessions
+- ✅ **SOAX** - Global coverage
+- ✅ **Smartproxy** - Cost-effective
+- ✅ **Webshare** - Budget option
+- ✅ **IPRoyal** - Rotating options
+- ✅ **Rayobyte** - Datacenter + residential
+- ✅ **PacketStream** - Peer-to-peer
+- ✅ **ProxyRack** - Flexible plans
+
+### Tier 6: Advanced Features
+- ✅ **Proxy chaining** - Multi-layer proxies
+- ✅ **Automatic proxy health checks** - Continuous monitoring
+- ✅ **Per-engine proxy assignment** - Optimal routing
+- ✅ **Automatic proxy rotation** - Dynamic switching
+- ✅ **Latency-aware proxy selection** - Smart routing
+- ✅ **Failure-based failover** - Redundancy
+- ✅ **Sticky sessions** - Connection persistence
+- ✅ **Weighted load balancing** - Capacity management
+
+### ❌ DO NOT Use:
 - ❌ **Free public proxies** - Slow, unreliable, blocked
-- ❌ **Simple HTTP proxies** - Easily detected and blocked
+- ❌ **Simple HTTP proxies** - Easily detected
 - ❌ **Single fixed proxy** - Obvious fingerprint
 
-### Recommended Setup:
-```
-Per-engine proxy assignment:
+---
 
-High-risk engines (rate limited):
-  - Google → SOCKS5 rotating
-  - Bing → Cloudflare WARP
+## Engine-Specific Proxy Routing (Recommended)
+
+**Key insight:** Different engines need different strategies
+
+```yaml
+# Geo-targeted routing by region
+baidu:
+  proxies:
+    - china_residential_proxy_1
+    - china_residential_proxy_2
+  failover: tor_socks5
+  sticky: true  # Maintain IP for session
+
+sogou:
+  proxies: baidu_proxies  # Same pool
   
-Independent indexes (lower risk):
-  - Brave → Direct (no proxy needed)
-  - Mojeek → Direct
+yandex:
+  proxies:
+    - russia_residential_proxy
+    - eastern_europe_proxy
+  failover: tor_socks5
   
-Regional engines:
-  - Baidu → SOCKS5 China-based
-  - Yandex → Direct or Tor
+naver:
+  proxies:
+    - korea_residential_proxy
+  failover: asia_warp
+  
+yahoo_japan:
+  proxies:
+    - japan_residential_proxy
+  failover: asia_warp
+  
+# Rate-limited high-value engines
+google:
+  proxies:
+    - mobile_rotating_pool_1
+    - mobile_rotating_pool_2
+    - mobile_rotating_pool_3
+  rotation: aggressive  # Rotate per request
+  failover: residential_fallback
+  
+bing:
+  proxies:
+    - cloudflare_warp
+    - residential_rotating
+  rotation: per_query
+  
+# Independent indexes (lower risk)
+brave:
+  proxies: null  # Direct, no proxy needed
+  
+mojeek:
+  proxies: null  # Direct, lower blocking rate
+  
+# Specialized search
+github:
+  proxies: null  # Low rate limit
+  
+stackoverflow:
+  proxies: null  # Developer-friendly
+  
+arxiv:
+  proxies: null  # Academic, no blocking
+  
+# Privacy/Alternative
+startpage:
+  proxies: cloudflare_warp  # Optional for extra privacy
+  
+qwant:
+  proxies: null  # No blocking issues
 ```
+
+---
+
+## Proxy Pool Manager Implementation
+
+**Features for production SearXNG:**
+
+```python
+class ProxyManager:
+    """Manages multi-tiered proxy strategy"""
+    
+    def __init__(self):
+        self.proxy_pools = {
+            'china_residential': ProxyPool(...),
+            'russia_residential': ProxyPool(...),
+            'korea_residential': ProxyPool(...),
+            'mobile_rotating': ProxyPool(...),
+            'cloudflare_warp': WarpConnector(),
+            'tor_socks5': TorConnector(),
+        }
+        
+    def get_proxy_for_engine(self, engine_name):
+        """Select optimal proxy for engine"""
+        engine_config = ENGINE_PROXY_MAP.get(engine_name)
+        if not engine_config:
+            return None  # Direct connection
+        
+        # Try proxies in priority order
+        for proxy_pool_name in engine_config['proxies']:
+            pool = self.proxy_pools[proxy_pool_name]
+            proxy = pool.get_healthy_proxy()
+            if proxy:
+                return proxy
+        
+        # Failover
+        return self.proxy_pools[engine_config['failover']].get_proxy()
+    
+    def health_check(self):
+        """Monitor all proxy pools"""
+        for pool in self.proxy_pools.values():
+            pool.test_connections()
+            
+    def rotate_proxy(self, engine_name):
+        """Rotate to next proxy"""
+        pool = self.get_proxy_pool_for_engine(engine_name)
+        return pool.get_next_proxy()
+    
+    def mark_failed(self, proxy, engine_name):
+        """Track failing proxies"""
+        pool = self.get_proxy_pool_for_engine(engine_name)
+        pool.mark_failed(proxy)
+        # Replace if too many failures
+        if pool.failure_rate() > 0.2:
+            pool.replace_proxies()
+```
+
+---
+
+## Additional SearXNG Features
+
+**Worth implementing for production deployment:**
+
+1. **Proxy reputation scoring** - Track success rates per proxy
+2. **Circuit breaker for bad proxies** - Disable failing proxies automatically
+3. **CAPTCHA detection** - Identify when blocked, rotate proxy
+4. **Exponential backoff** - Graceful retry strategy
+5. **Health monitoring dashboard** - Visual proxy status
+6. **Proxy usage metrics** - Track proxy performance
+7. **Automatic proxy replacement** - Replace failing proxies
+8. **Per-engine timeout tuning** - Based on proxy latency
+9. **Connection pooling per proxy** - Reduce overhead
+10. **Sticky session management** - Maintain IP for specific queries
 
 ---
 

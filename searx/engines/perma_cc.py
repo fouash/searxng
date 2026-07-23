@@ -19,10 +19,8 @@ about = {
     'wikidata_id': None,
     'official_api_documentation': 'https://perma.cc/api/v1/',
     'use_official_api': True,
-    'requires_api_key': False,
     'results': 'JSON',
-    'language': 'en',
-    'timeout': 5.0
+    'language': 'en'
 }
 
 categories = ['web', 'science']

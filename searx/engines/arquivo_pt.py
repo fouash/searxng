@@ -18,10 +18,8 @@ about = {
     'wikidata_id': None,
     'official_api_documentation': 'https://arquivo.pt/services',
     'use_official_api': True,
-    'requires_api_key': False,
     'results': 'JSON',
-    'language': 'pt',
-    'timeout': 5.0
+    'language': 'pt'
 }
 
 categories = ['web']

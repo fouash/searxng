@@ -20,10 +20,8 @@ about = {
     'wikidata_id': None,
     'official_api_documentation': 'https://archive.today/services/find',
     'use_official_api': True,
-    'requires_api_key': False,
     'results': 'JSON',
-    'language': 'en',
-    'timeout': 5.0
+    'language': 'en'
 }
 
 categories = ['web', 'social media']

@@ -19,10 +19,8 @@ about = {
     'wikidata_id': 'Q28051707',
     'official_api_documentation': 'https://www.webarchive.org.uk/about/api',
     'use_official_api': True,
-    'requires_api_key': False,
     'results': 'JSON',
-    'language': 'en',
-    'timeout': 5.0
+    'language': 'en'
 }
 
 categories = ['web']

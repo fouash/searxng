@@ -20,14 +20,14 @@ about = {
     'wikidata_id': None,
     'official_api_documentation': 'https://mementoweb.org/guide/quick-start/',
     'use_official_api': True,
-    'results': 'JSON',
-    'language': 'en'
+    'results': 'JSON'
 }
 
 paging = True
 page_size = 50
 categories = ['web', 'social media', 'search']
 engine_type = 'online'
+language = 'en'
 
 API_BASE = 'https://timetravel.mementoweb.org'
 

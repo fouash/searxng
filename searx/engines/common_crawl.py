@@ -19,14 +19,14 @@ about = {
     'wikidata_id': 'Q21006196',
     'official_api_documentation': 'https://commoncrawl.org/the-commons/crawling-the-commons/',
     'use_official_api': True,
-    'results': 'JSON',
-    'language': 'en'
+    'results': 'JSON'
 }
 
 paging = True
 page_size = 50
 categories = ['web', 'science', 'data']
 engine_type = 'online'
+language = 'en'
 
 # Common Crawl maintains multiple monthly indexes
 # Use the latest 2024-10 index by default

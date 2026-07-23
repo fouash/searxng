@@ -20,13 +20,13 @@ about = {
     'wikidata_id': None,
     'official_api_documentation': 'https://archive.today/services/find',
     'use_official_api': True,
-    'results': 'JSON',
-    'language': 'en'
+    'results': 'JSON'
 }
 
 categories = ['web', 'social media']
 engine_type = 'online'
 paging = False
+language = 'en'
 
 API_BASE = 'https://archive.today'
 

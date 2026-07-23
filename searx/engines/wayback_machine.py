@@ -20,14 +20,14 @@ about = {
     'wikidata_id': 'Q590141',
     'official_api_documentation': 'https://archive.org/help/wayback_api.php',
     'use_official_api': True,
-    'results': 'JSON',
-    'language': 'en'
+    'results': 'JSON'
 }
 
 paging = True
 page_size = 50
 categories = ['web', 'image', 'social media']
 engine_type = 'online'
+language = 'en'
 
 API_ENDPOINT = 'https://web.archive.org/cdx/search/cdx'
 ARCHIVE_BASE = 'https://web.archive.org'

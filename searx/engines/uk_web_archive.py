@@ -19,14 +19,14 @@ about = {
     'wikidata_id': 'Q28051707',
     'official_api_documentation': 'https://www.webarchive.org.uk/about/api',
     'use_official_api': True,
-    'results': 'JSON',
-    'language': 'en'
+    'results': 'JSON'
 }
 
 categories = ['web']
 engine_type = 'online'
 paging = True
 page_size = 50
+language = 'en'
 
 API_BASE = 'https://www.webarchive.org.uk'
 

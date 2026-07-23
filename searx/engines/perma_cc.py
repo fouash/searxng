@@ -19,14 +19,14 @@ about = {
     'wikidata_id': None,
     'official_api_documentation': 'https://perma.cc/api/v1/',
     'use_official_api': True,
-    'results': 'JSON',
-    'language': 'en'
+    'results': 'JSON'
 }
 
 categories = ['web', 'science']
 engine_type = 'online'
 paging = True
 page_size = 50
+language = 'en'
 
 API_BASE = 'https://perma.cc/api/v1'
 

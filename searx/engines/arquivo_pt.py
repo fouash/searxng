@@ -18,14 +18,14 @@ about = {
     'wikidata_id': None,
     'official_api_documentation': 'https://arquivo.pt/services',
     'use_official_api': True,
-    'results': 'JSON',
-    'language': 'pt'
+    'results': 'JSON'
 }
 
 categories = ['web']
 engine_type = 'online'
 paging = True
 page_size = 50
+language = 'pt'
 
 API_BASE = 'https://arquivo.pt'
 

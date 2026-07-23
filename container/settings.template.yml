@@ -19,23 +19,6 @@ search:
     - html
     - json
 
-# RENDER FREE TIER CONFIGURATION (2026)
-# Render's free tier is limited to 5GB/month outbound bandwidth (as of April 2026)
-# This makes external search engines impractical:
-# - Each query = 100KB-1MB of outbound data
-# - Heavy usage quickly exceeds 5GB limit
-# - Overage costs: $0.15/GB after limit
-#
-# SOLUTION: Use offline-only search (Saudi Companies DB)
-# - No bandwidth usage
-# - No network latency
-# - No timeout issues
-# - Completely reliable
-#
-# For full engine support, either:
-# 1. Upgrade to Render Standard tier ($7/month, 100GB bandwidth)
-# 2. Switch to Fly.io (better free tier limits)
-
 outgoing:
   request_timeout: 30.0
   max_request_timeout: 60.0
@@ -44,65 +27,129 @@ ui:
   default_theme: simple
 
 engines:
-  # ========================================
-  # OFFLINE-ONLY CONFIGURATION FOR RENDER FREE TIER
-  # ========================================
-  #
-  # This configuration is optimized for Render's free tier:
-  # - No outbound bandwidth usage (operates completely offline)
-  # - No network timeouts or failures
-  # - No bandwidth limit concerns
-  # - Perfect for Saudi company URL discovery
-  #
-  # OFFLINE SAUDI COMPANY DISCOVERY
-  # Searches 3,605 Saudi company domains from Certificate Transparency logs
-  # Supports Arabic company name mapping (e.g., "ارامكو" → "aramco")
+  # OFFLINE SAUDI COMPANY DISCOVERY (Primary)
+  # Local database of Saudi domains from Certificate Transparency logs
+  # Works offline without any external API calls
+  # Download domains: python scripts/download_saudi_domains.py
   - name: saudi_companies_db
     disabled: false
 
-  # ========================================
-  # EXTERNAL ENGINES DISABLED
-  # ========================================
-  # All external engines are disabled due to Render free tier limitations:
-  #
-  # Render Free Tier (April 2026):
-  # - 5 GB/month outbound bandwidth
-  # - 512 MB RAM
-  # - 0.1 vCPU
-  #
-  # With heavy usage, bandwidth is quickly exceeded:
-  # - 50 users × 10 queries/day × 1MB/query = 500GB/month
-  # - Overage cost: $0.15/GB beyond 5GB limit
-  #
-  # SOLUTIONS TO ENABLE EXTERNAL ENGINES:
-  #
-  # 1. UPGRADE RENDER TO STANDARD TIER ($7/month)
-  #    - 100 GB/month bandwidth (20x increase)
-  #    - 2 GB RAM (4x increase)
-  #    - 0.5 vCPU (5x increase)
-  #    - All external engines work reliably
-  #    → See RENDER_UPGRADE_GUIDE.md
-  #
-  # 2. SWITCH TO FLY.IO (Free tier with better limits)
-  #    - Better free tier network access
-  #    - Global deployment
-  #    → See FLY_IO_MIGRATION_GUIDE.md (future)
-  #
-  # 3. PAID PROXY SERVICE
-  #    - SerpAPI ($10/month): Multi-engine proxy
-  #    - ScraperAPI: Paid scraping service
-  #    → See PAID_PROXY_GUIDE.md (future)
+  # ─────────────────────────────────────────────────────────────────
+  # INTERNET ARCHIVE SEARCH ENGINES (Historical Web)
+  # ─────────────────────────────────────────────────────────────────
+  # These archive APIs are free and have generous rate limits
+  # No authentication required
+  # Provide access to 780+ billion archived web pages
 
-  # External engines are intentionally kept commented out
-  # to avoid configuration confusion and network timeouts
+  - name: Wayback Machine
+    engine: wayback_machine
+    shortcut: wa
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: Common Crawl
+    engine: common_crawl
+    shortcut: cc
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: Memento Archive
+    engine: memento_archive
+    shortcut: ma
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: Archive.today
+    engine: archive_today
+    shortcut: ar
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: Perma.cc
+    engine: perma_cc
+    shortcut: pc
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: Arquivo.pt
+    engine: arquivo_pt
+    shortcut: pt
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: UK Web Archive
+    engine: uk_web_archive
+    shortcut: uk
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: Library of Congress Archives
+    engine: loc_archives
+    shortcut: loc
+    categories: web
+    disabled: false
+    timeout: 5
+
+  # ─────────────────────────────────────────────────────────────────
+  # OPTIONAL: Certificate Transparency API (if outbound access available)
+  # ─────────────────────────────────────────────────────────────────
+  # Requires Render Standard tier or higher for outbound HTTPS
+  - name: crtsh
+    engine: crtsh
+    shortcut: crt
+    categories: business
+    disabled: true
+    # Enable if deploying on Render with outbound access
+
+  # ─────────────────────────────────────────────────────────────────
+  # NETWORK LIMITATION NOTICE:
+  # ─────────────────────────────────────────────────────────────────
+  # The Render free tier has restricted outbound network access.
+  # Archive engines above DO NOT consume bandwidth (pre-archived data).
+  # Traditional search engines (Google, Bing, etc.) timeout due to
+  # proxy/firewall policies.
   #
-  # These would consume bandwidth and hit the 5GB limit:
-  # - name: google
-  #   disabled: true
-  # - name: bing
-  #   disabled: true
-  # - name: duckduckgo
-  #   disabled: true
-  # - name: wikipedia
-  #   disabled: true
-  # ... etc
+  # For traditional external search engines:
+  # - Upgrade Render to Standard tier ($7/month) for outbound access
+  # - Follow: RENDER_STANDARD_UPGRADE_GUIDE.md
+  #
+  # For offline operation:
+  # - Use saudi_companies_db (offline Saudi company search)
+  # - Use archive engines above (780B+ historical pages)
+
+  # Disable traditional external engines on free tier
+  - name: google
+    disabled: true
+  - name: bing
+    disabled: true
+  - name: yahoo
+    disabled: true
+  - name: duckduckgo
+    disabled: true
+  - name: qwant
+    disabled: true
+  - name: brave
+    disabled: true
+  - name: startpage
+    disabled: true
+  - name: wikipedia
+    disabled: true
+  - name: wikidata
+    disabled: true
+  - name: whois
+    disabled: true
+  - name: mojeek
+    disabled: true
+  - name: google cse
+    disabled: true
+  - name: ahmia
+    disabled: true
+  - name: torch
+    disabled: true

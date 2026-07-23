@@ -20,61 +20,127 @@ search:
     - json
 
 outgoing:
-  request_timeout: 30.0
-  max_request_timeout: 60.0
+  # FREE PROXY CONFIGURATION
+  # Set your Cloudflare Worker URL below to enable all external engines
+  # Example: https://searxng-proxy.workers.dev/proxy?url=
+  # Get proxy URL from DEPLOY_FREE_PROXY_GUIDE.md
+  proxies:
+    https: "https://searxng-proxy.workers.dev/proxy?url="
+    http: "https://searxng-proxy.workers.dev/proxy?url="
+  request_timeout: 8
+  max_request_timeout: 15
 
 ui:
   default_theme: simple
 
+# PERFORMANCE OPTIMIZATION: Redis Caching
+# Comment out if Redis not available
+# Dramatically improves performance for repeated searches
+redis:
+  url: redis://localhost:6379/0
+
+cache:
+  default_ttl: 300
+
+result_cache:
+  expiration_time: 86400  # 24 hours
+
 engines:
-  # OFFLINE SAUDI COMPANY DISCOVERY (Primary)
+  # OFFLINE SAUDI COMPANY DISCOVERY
   # Local database of Saudi domains from Certificate Transparency logs
   # Works offline without any external API calls
-  # Download domains: python scripts/download_saudi_domains.py
   - name: saudi_companies_db
     disabled: false
 
-  # OPTIONAL: Certificate Transparency API (if outbound access available)
-  # Requires Render Standard tier or higher for outbound HTTPS
-  - name: crtsh
-    engine: crtsh
-    shortcut: crt
-    categories: business
-    disabled: true
-    # Enable if deploying on Render with outbound access
-
-  # NETWORK LIMITATION NOTICE:
-  # The Render environment has restricted outbound network access.
-  # All external search engines timeout due to proxy/firewall policies.
-  # For outbound access, upgrade Render to Standard tier or higher.
-  # For offline-only operation, use saudi_companies_db engine above.
-
-  # Disable all external engines to avoid error messages
+  # === CORE SEARCH ENGINES ===
   - name: google
-    disabled: true
+    disabled: false
+    timeout: 8
+
   - name: bing
-    disabled: true
-  - name: yahoo
-    disabled: true
+    disabled: false
+    timeout: 8
+
   - name: duckduckgo
-    disabled: true
+    disabled: false
+    timeout: 8
+
   - name: qwant
-    disabled: true
-  - name: brave
-    disabled: true
+    disabled: false
+    timeout: 8
+
   - name: startpage
-    disabled: true
+    disabled: false
+    timeout: 8
+
+  # === CHINESE SEARCH ENGINES ===
+  - name: baidu
+    disabled: false
+    timeout: 8
+    language: zh
+
+  - name: sogou
+    disabled: false
+    timeout: 8
+    language: zh
+
+  # === RUSSIAN/CYRILLIC ENGINES ===
+  - name: yandex
+    disabled: false
+    timeout: 8
+    language: ru
+
+  # === ASIAN REGIONAL ENGINES ===
+  - name: naver
+    disabled: false
+    timeout: 8
+    language: ko
+
+  # === GENERAL REFERENCE ===
   - name: wikipedia
-    disabled: true
+    disabled: false
+    timeout: 8
+
   - name: wikidata
-    disabled: true
-  - name: whois
-    disabled: true
+    disabled: false
+    timeout: 8
+
+  # === SPECIALIZED SEARCH ENGINES ===
+  - name: github
+    disabled: false
+    timeout: 8
+
+  - name: arxiv
+    disabled: false
+    timeout: 8
+
+  - name: youtube
+    disabled: false
+    timeout: 8
+
+  - name: reddit
+    disabled: false
+    timeout: 8
+
+  - name: twitter
+    disabled: false
+    timeout: 8
+
   - name: mojeek
-    disabled: true
-  - name: google cse
-    disabled: true
-  - name: ahmia
-    disabled: true
-  - name: torch
-    disabled: true
+    disabled: false
+    timeout: 8
+
+  # === OPTIONAL: Additional Engines (uncomment to enable) ===
+  # - name: brave
+  #   disabled: false
+  #   timeout: 8
+  # - name: yahoo
+  #   disabled: false
+  #   timeout: 8
+  # - name: whois
+  #   disabled: false
+  #   timeout: 8
+  # - name: crtsh
+  #   disabled: false
+  #   timeout: 8
+  #   categories: business

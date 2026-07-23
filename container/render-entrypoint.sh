@@ -35,4 +35,46 @@ if [ ! -f "${_domains_file}" ]; then
     fi
 fi
 
+# Initialize R2 bucket if credentials are provided
+if [ -n "$CLOUDFLARE_R2_ACCESS_KEY_ID" ] && [ -n "$CLOUDFLARE_R2_SECRET_ACCESS_KEY" ]; then
+    echo "[searxng] Initializing Cloudflare R2 bucket..."
+    python3 /usr/local/searxng/scripts/init_r2.py >> /var/log/searxng-r2-init.log 2>&1 || \
+        echo "[searxng] ⚠ R2 initialization failed - check credentials"
+fi
+
+# Auto-export stats to R2 every 30 minutes (if configured)
+if [ -n "$CLOUDFLARE_R2_ACCESS_KEY_ID" ] && [ -n "$CLOUDFLARE_R2_SECRET_ACCESS_KEY" ]; then
+    echo "[searxng] Starting R2 stats export daemon..."
+    (
+        while true; do
+            sleep 1800  # 30 minutes
+            python3 << 'PYTHON_SCRIPT'
+try:
+    import os
+    from datetime import datetime
+
+    # Only export if R2 is configured
+    if os.environ.get('CLOUDFLARE_R2_ACCESS_KEY_ID'):
+        # Import after environment is set
+        from searx.storage.r2_storage import R2Storage
+
+        r2 = R2Storage()
+
+        # Get current stats (placeholder - actual implementation depends on SearXNG stats module)
+        stats_data = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'queries': 0,  # Would be populated from SearXNG stats
+            'engines_checked': 1,
+            'status': 'ok'
+        }
+
+        key = r2.save_stats(stats_data)
+        print(f"[searxng] Exported stats to R2: {key}")
+except Exception as e:
+    print(f"[searxng] R2 export error: {e}")
+PYTHON_SCRIPT
+        done
+    ) >> /var/log/searxng-r2-export.log 2>&1 &
+fi
+
 exec /usr/local/searxng/entrypoint.sh

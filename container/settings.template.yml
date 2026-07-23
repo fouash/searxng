@@ -45,56 +45,56 @@ engines:
     engine: wayback_machine
     shortcut: wa
     categories: web
-    disabled: false
+    disabled: true
     timeout: 5
 
   - name: Common Crawl
     engine: common_crawl
     shortcut: cc
     categories: web
-    disabled: false
+    disabled: true
     timeout: 5
 
   - name: Memento Archive
     engine: memento_archive
     shortcut: ma
     categories: web
-    disabled: false
+    disabled: true
     timeout: 5
 
   - name: Archive.today
     engine: archive_today
     shortcut: ar
     categories: web
-    disabled: false
+    disabled: true
     timeout: 5
 
   - name: Perma.cc
     engine: perma_cc
     shortcut: pc
     categories: web
-    disabled: false
+    disabled: true
     timeout: 5
 
   - name: Arquivo.pt
     engine: arquivo_pt
     shortcut: pt
     categories: web
-    disabled: false
+    disabled: true
     timeout: 5
 
   - name: UK Web Archive
     engine: uk_web_archive
     shortcut: uk
     categories: web
-    disabled: false
+    disabled: true
     timeout: 5
 
   - name: Library of Congress Archives
     engine: loc_archives
     shortcut: loc
     categories: web
-    disabled: false
+    disabled: true
     timeout: 5
 
   # ─────────────────────────────────────────────────────────────────

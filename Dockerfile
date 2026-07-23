@@ -46,7 +46,7 @@ RUN set -eux -o pipefail; \
 FROM docker.io/searxng/base:searxng AS dist
 
 # Install curl for downloading Saudi domains and company mappings at startup
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
 
 COPY --chown=977:977 --from=builder /usr/local/searxng/.venv/ ./.venv/
 COPY --chown=977:977 --from=builder /usr/local/searxng/searx/ ./searx/

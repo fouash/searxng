@@ -144,33 +144,95 @@ def _find_mapped_keywords(query: str) -> List[str]:
 
 
 def request(params):
-    """Prepare search request - handled locally (no HTTP call needed)."""
+    """Offline engine - no HTTP request needed."""
+    # For offline engines, SearXNG may not call response at all
+    # Instead, handle search directly if possible
     query = params.get('q', '').lower().strip()
-    params['_query'] = query
-    return params
+    if not query:
+        return {}
+
+    # Try to do the search here and store results
+    try:
+        domains_db = _get_domains()
+        if not domains_db:
+            return {}
+
+        all_domains = domains_db.get('saudi', set()) | domains_db.get('regional', set())
+        search_keywords = [query]
+        mapped_keywords = _find_mapped_keywords(query)
+        if mapped_keywords:
+            search_keywords.extend(mapped_keywords)
+
+        matched_domains = []
+        seen_domains = set()
+
+        for search_key in search_keywords:
+            for domain in all_domains:
+                if domain in seen_domains:
+                    continue
+
+                score = 0.0
+                if domain == search_key:
+                    score = 1.0
+                elif domain.startswith(search_key + '.'):
+                    score = 0.95
+                elif domain.startswith(search_key + '-'):
+                    score = 0.90
+                elif search_key in domain:
+                    score = 0.85
+                else:
+                    domain_name = domain.split('.')[0]
+                    if search_key == domain_name:
+                        score = 0.90
+                    elif search_key in domain_name and len(search_key) > 2:
+                        score = 0.80
+
+                if score > 0:
+                    if domain in domains_db.get('saudi', set()):
+                        score = min(1.0, score + 0.10)
+
+                    matched_domains.append({'domain': domain, 'score': score})
+                    seen_domains.add(domain)
+
+        # Store results in params for potential response handler
+        params['_results'] = matched_domains
+        logger.info(f'Found {len(matched_domains)} results for query: {query}')
+
+    except Exception as e:
+        logger.error(f'Error in request handler: {e}')
+
+    return {}
 
 
 def response(resp):
-    """Search local domain database using query and company mappings."""
+    """Response handler - results already computed in request."""
     results = []
 
-    # Extract query from different possible sources
-    query = ''
     try:
-        if hasattr(resp, 'get'):
-            query = resp.get('_query', '').lower().strip()
-        elif hasattr(resp, 'search_params'):
-            query = resp.search_params.get('_query', '').lower().strip()
-        elif hasattr(resp, 'json'):
-            data = resp.json()
-            query = data.get('_query', '').lower().strip()
-    except Exception as e:
-        logger.warning(f'Error extracting query from response: {e}')
-        return results
+        # If offline search worked in request(), results should be in params
+        if hasattr(resp, 'params'):
+            matched_domains = resp.params.get('_results', [])
+        else:
+            # Fallback - shouldn't reach here for offline engine
+            return results
 
-    if not query:
-        logger.debug('Empty query received')
-        return results
+        # Convert to SearXNG format
+        for item in matched_domains:
+            domain = item['domain']
+            results.append({
+                'title': domain,
+                'url': f'https://{domain}',
+                'content': f'Saudi company domain - Found in Certificate Transparency logs',
+                'engine': 'saudi_companies_db',
+                'score': item['score'],
+            })
+
+        logger.info(f'Returning {len(results)} formatted results')
+
+    except Exception as e:
+        logger.error(f'Error in response handler: {e}')
+
+    return results
 
     # Load domains database
     domains_db = _get_domains()

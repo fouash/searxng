@@ -45,9 +45,6 @@ RUN set -eux -o pipefail; \
 # ── dist ─────────────────────────────────────────────────────────────────────
 FROM docker.io/searxng/base:searxng AS dist
 
-# Install Redis for result caching (optional, improves performance dramatically)
-RUN apt-get update && apt-get install -y redis-server && rm -rf /var/lib/apt/lists/*
-
 COPY --chown=977:977 --from=builder /usr/local/searxng/.venv/ ./.venv/
 COPY --chown=977:977 --from=builder /usr/local/searxng/searx/ ./searx/
 COPY --chown=977:977 ./container/entrypoint.sh \

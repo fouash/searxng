@@ -19,128 +19,90 @@ search:
     - html
     - json
 
+# RENDER FREE TIER CONFIGURATION (2026)
+# Render's free tier is limited to 5GB/month outbound bandwidth (as of April 2026)
+# This makes external search engines impractical:
+# - Each query = 100KB-1MB of outbound data
+# - Heavy usage quickly exceeds 5GB limit
+# - Overage costs: $0.15/GB after limit
+#
+# SOLUTION: Use offline-only search (Saudi Companies DB)
+# - No bandwidth usage
+# - No network latency
+# - No timeout issues
+# - Completely reliable
+#
+# For full engine support, either:
+# 1. Upgrade to Render Standard tier ($7/month, 100GB bandwidth)
+# 2. Switch to Fly.io (better free tier limits)
+
 outgoing:
-  # FREE PROXY CONFIGURATION
-  # Set your Cloudflare Worker URL below to enable all external engines
-  # Example: https://searxng-proxy.workers.dev/proxy?url=
-  # Get proxy URL from DEPLOY_FREE_PROXY_GUIDE.md
-  proxies:
-    https: "https://searxng-proxy.workers.dev/proxy?url="
-    http: "https://searxng-proxy.workers.dev/proxy?url="
-  request_timeout: 8
-  max_request_timeout: 15
+  request_timeout: 30.0
+  max_request_timeout: 60.0
 
 ui:
   default_theme: simple
 
-# PERFORMANCE OPTIMIZATION: Redis Caching
-# Comment out if Redis not available
-# Dramatically improves performance for repeated searches
-redis:
-  url: redis://localhost:6379/0
-
-cache:
-  default_ttl: 300
-
-result_cache:
-  expiration_time: 86400  # 24 hours
-
 engines:
+  # ========================================
+  # OFFLINE-ONLY CONFIGURATION FOR RENDER FREE TIER
+  # ========================================
+  #
+  # This configuration is optimized for Render's free tier:
+  # - No outbound bandwidth usage (operates completely offline)
+  # - No network timeouts or failures
+  # - No bandwidth limit concerns
+  # - Perfect for Saudi company URL discovery
+  #
   # OFFLINE SAUDI COMPANY DISCOVERY
-  # Local database of Saudi domains from Certificate Transparency logs
-  # Works offline without any external API calls
+  # Searches 3,605 Saudi company domains from Certificate Transparency logs
+  # Supports Arabic company name mapping (e.g., "ارامكو" → "aramco")
   - name: saudi_companies_db
     disabled: false
 
-  # === CORE SEARCH ENGINES ===
-  - name: google
-    disabled: false
-    timeout: 8
+  # ========================================
+  # EXTERNAL ENGINES DISABLED
+  # ========================================
+  # All external engines are disabled due to Render free tier limitations:
+  #
+  # Render Free Tier (April 2026):
+  # - 5 GB/month outbound bandwidth
+  # - 512 MB RAM
+  # - 0.1 vCPU
+  #
+  # With heavy usage, bandwidth is quickly exceeded:
+  # - 50 users × 10 queries/day × 1MB/query = 500GB/month
+  # - Overage cost: $0.15/GB beyond 5GB limit
+  #
+  # SOLUTIONS TO ENABLE EXTERNAL ENGINES:
+  #
+  # 1. UPGRADE RENDER TO STANDARD TIER ($7/month)
+  #    - 100 GB/month bandwidth (20x increase)
+  #    - 2 GB RAM (4x increase)
+  #    - 0.5 vCPU (5x increase)
+  #    - All external engines work reliably
+  #    → See RENDER_UPGRADE_GUIDE.md
+  #
+  # 2. SWITCH TO FLY.IO (Free tier with better limits)
+  #    - Better free tier network access
+  #    - Global deployment
+  #    → See FLY_IO_MIGRATION_GUIDE.md (future)
+  #
+  # 3. PAID PROXY SERVICE
+  #    - SerpAPI ($10/month): Multi-engine proxy
+  #    - ScraperAPI: Paid scraping service
+  #    → See PAID_PROXY_GUIDE.md (future)
 
-  - name: bing
-    disabled: false
-    timeout: 8
-
-  - name: duckduckgo
-    disabled: false
-    timeout: 8
-
-  - name: qwant
-    disabled: false
-    timeout: 8
-
-  - name: startpage
-    disabled: false
-    timeout: 8
-
-  # === CHINESE SEARCH ENGINES ===
-  - name: baidu
-    disabled: false
-    timeout: 8
-    language: zh
-
-  - name: sogou
-    disabled: false
-    timeout: 8
-    language: zh
-
-  # === RUSSIAN/CYRILLIC ENGINES ===
-  - name: yandex
-    disabled: false
-    timeout: 8
-    language: ru
-
-  # === ASIAN REGIONAL ENGINES ===
-  - name: naver
-    disabled: false
-    timeout: 8
-    language: ko
-
-  # === GENERAL REFERENCE ===
-  - name: wikipedia
-    disabled: false
-    timeout: 8
-
-  - name: wikidata
-    disabled: false
-    timeout: 8
-
-  # === SPECIALIZED SEARCH ENGINES ===
-  - name: github
-    disabled: false
-    timeout: 8
-
-  - name: arxiv
-    disabled: false
-    timeout: 8
-
-  - name: youtube
-    disabled: false
-    timeout: 8
-
-  - name: reddit
-    disabled: false
-    timeout: 8
-
-  - name: twitter
-    disabled: false
-    timeout: 8
-
-  - name: mojeek
-    disabled: false
-    timeout: 8
-
-  # === OPTIONAL: Additional Engines (uncomment to enable) ===
-  # - name: brave
-  #   disabled: false
-  #   timeout: 8
-  # - name: yahoo
-  #   disabled: false
-  #   timeout: 8
-  # - name: whois
-  #   disabled: false
-  #   timeout: 8
-  # - name: crtsh
-  #   disabled: false
-  #   timeout: 8
-  #   categories: business
+  # External engines are intentionally kept commented out
+  # to avoid configuration confusion and network timeouts
+  #
+  # These would consume bandwidth and hit the 5GB limit:
+  # - name: google
+  #   disabled: true
+  # - name: bing
+  #   disabled: true
+  # - name: duckduckgo
+  #   disabled: true
+  # - name: wikipedia
+  #   disabled: true
+  # ... etc

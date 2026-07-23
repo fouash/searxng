@@ -51,14 +51,4 @@ if [ ! -f "${_mappings_file}" ]; then
     fi
 fi
 
-# Start Redis in background for result caching (optional but recommended)
-# Redis dramatically improves performance for repeated searches
-if command -v redis-server >/dev/null 2>&1; then
-    echo "[searxng] Starting Redis cache server..."
-    redis-server --daemonize yes --logfile /var/log/redis.log 2>&1 || \
-        echo "[searxng] ⚠ Redis startup failed - continuing without cache"
-else
-    echo "[searxng] Redis not installed - caching disabled"
-fi
-
 exec /usr/local/searxng/entrypoint.sh

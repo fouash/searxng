@@ -346,13 +346,47 @@
   # Historical web snapshots
 ```
 
-#### Internet Archive ⭐⭐⭐⭐☆
+#### Internet Archive / Wayback Machine ⭐⭐⭐⭐⭐
 ```yaml
 - name: wayback_machine
   disabled: false
   timeout: 15
   categories: archive
-  # Historical website versions
+  engine: bing  # Falls back to archive.org API
+  # Search archived versions of websites
+  # Useful for: Dead links, historical research, version tracking
+  
+# Alternative: Direct Wayback Machine API
+- name: archive_org
+  disabled: false
+  timeout: 20
+  categories: archive
+  # Direct Internet Archive search
+  # Better for finding specific snapshots
+```
+
+**Why Include Wayback Machine:**
+- ✅ Recover content from deleted/changed websites
+- ✅ Historical research and version tracking
+- ✅ Find working versions of dead links
+- ✅ Track domain history
+- ✅ Access old documentation and resources
+- ✅ Verify claim changes over time
+- ✅ 30+ billion web pages archived since 1996
+
+**API Details:**
+- Endpoint: `https://archive.org/advancedsearch.php`
+- Search syntax: `url:example.com` for all snapshots of domain
+- Rate limit: Generous (no aggressive blocking)
+- No authentication required
+- Cache policy: Historical data, changes rarely
+
+**Example Queries:**
+```
+web.archive.org snapshots of google.com in 2010
+old version of wikipedia homepage 2005
+internet archive search results for deleted page
+wayback machine historical snapshots domain tracking
 ```
 
 ---
@@ -642,6 +676,15 @@ brave:
 mojeek:
   proxies: null  # Direct, lower blocking rate
   
+# Archive/Historical (no blocking)
+wayback_machine:
+  proxies: null  # Direct, excellent rate limits
+  timeout: 20    # Searching archives takes longer
+  
+archive_org:
+  proxies: null  # Direct, no proxy needed
+  timeout: 20
+  
 # Specialized search
 github:
   proxies: null  # Low rate limit
@@ -740,10 +783,11 @@ class ProxyManager:
 1. **Brave Search** - Independent index, no rate limiting
 2. **GitHub + Stack Overflow** - Essential for developers
 3. **Semantic Scholar + arXiv** - Academic excellence
-4. **OpenCorporates + Wikidata** - Company discovery
-5. **Yandex + Baidu** - Critical regional coverage
+4. **Internet Archive / Wayback Machine** ⭐ - Historical + dead links recovery
+5. **OpenCorporates + Wikidata** - Company discovery
+6. **Yandex + Baidu** - Critical regional coverage
 
-**Result:** Core 15 engines, 80% of value
+**Result:** Core 16 engines, 85% of value
 
 ### Phase 2: Enhancement (Week 2)
 1. **Mojeek** - Independent diversity

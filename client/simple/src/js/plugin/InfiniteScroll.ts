@@ -7,104 +7,181 @@ import { getElement } from "../util/getElement.ts";
 
 /**
  * Automatically loads the next page when scrolling to bottom of the current page.
+ *
+ * Uses Intersection Observer API to detect when user scrolls near the last article,
+ * then loads the next page via AJAX and appends results to the current page.
  */
 export default class InfiniteScroll extends Plugin {
+  private static readonly SCROLL_TRIGGER_MARGIN = "320px";
+  private static readonly OBSERVED_SELECTOR = "article.result:last-child";
+  private static readonly LAST_ARTICLE_SELECTOR = "#urls article";
+  private static readonly HORIZONTAL_DIVIDER = "hr";
+  private static readonly IMAGE_ONLY_CLASS = "only_template_images";
+  private static readonly ERROR_CLASS = "dialog-error";
+
+  private observer: IntersectionObserver | null = null;
+
   public constructor() {
     super("infiniteScroll");
   }
 
   protected async run(): Promise<void> {
     const resultsElement = getElement<HTMLElement>("results");
+    const hasOnlyImages = resultsElement.classList.contains(InfiniteScroll.IMAGE_ONLY_CLASS);
 
-    const onlyImages: boolean = resultsElement.classList.contains("only_template_images");
-    const observedSelector = "article.result:last-child";
+    this.observer = this.createIntersectionObserver(hasOnlyImages);
+    this.observeInitialElement();
+  }
 
-    const spinnerElement = document.createElement("div");
-    spinnerElement.className = "loader";
+  private createIntersectionObserver(hasOnlyImages: boolean): IntersectionObserver {
+    return new IntersectionObserver(
+      (entries) => this.handleIntersection(entries, hasOnlyImages),
+      { rootMargin: InfiniteScroll.SCROLL_TRIGGER_MARGIN }
+    );
+  }
 
-    const loadNextPage = async (callback: () => void): Promise<void> => {
-      const searchForm = document.querySelector<HTMLFormElement>("#search");
-      assertElement(searchForm);
+  private handleIntersection(entries: IntersectionObserverEntry[], hasOnlyImages: boolean): void {
+    const [paginationEntry] = entries;
 
-      const form = document.querySelector<HTMLFormElement>("#pagination form.next_page");
-      assertElement(form);
+    if (!paginationEntry?.isIntersecting) {
+      return;
+    }
 
-      const action = searchForm.getAttribute("action");
-      if (!action) {
-        throw new Error("Form action not defined");
-      }
+    if (!this.observer) {
+      return;
+    }
 
-      const paginationElement = document.querySelector<HTMLElement>("#pagination");
-      assertElement(paginationElement);
+    this.observer.unobserve(paginationEntry.target);
+    this.loadNextPageAndObserve(hasOnlyImages);
+  }
 
-      paginationElement.replaceChildren(spinnerElement);
+  private observeInitialElement(): void {
+    if (!this.observer) {
+      return;
+    }
 
-      try {
-        const res = await http("POST", action, { body: new FormData(form) });
-        const nextPage = await res.text();
-        if (!nextPage) return;
-
-        const nextPageDoc = new DOMParser().parseFromString(nextPage, "text/html");
-        const articleList = nextPageDoc.querySelectorAll<HTMLElement>("#urls article");
-        const nextPaginationElement = nextPageDoc.querySelector<HTMLElement>("#pagination");
-
-        document.querySelector("#pagination")?.remove();
-
-        const urlsElement = document.querySelector<HTMLElement>("#urls");
-        if (!urlsElement) {
-          throw new Error("URLs element not found");
-        }
-
-        if (articleList.length > 0 && !onlyImages) {
-          // do not add <hr> element when there are only images
-          urlsElement.appendChild(document.createElement("hr"));
-        }
-
-        urlsElement.append(...articleList);
-
-        if (nextPaginationElement) {
-          const results = document.querySelector<HTMLElement>("#results");
-          results?.appendChild(nextPaginationElement);
-          callback();
-        }
-      } catch (error) {
-        console.error("Error loading next page:", error);
-
-        const errorElement = Object.assign(document.createElement("div"), {
-          textContent: settings.translations?.error_loading_next_page ?? "Error loading next page",
-          className: "dialog-error"
-        });
-        errorElement.setAttribute("role", "alert");
-        document.querySelector("#pagination")?.replaceChildren(errorElement);
-      }
-    };
-
-    const intersectionObserveOptions: IntersectionObserverInit = {
-      rootMargin: "320px"
-    };
-
-    const observer: IntersectionObserver = new IntersectionObserver(async (entries: IntersectionObserverEntry[]) => {
-      const [paginationEntry] = entries;
-
-      if (paginationEntry?.isIntersecting) {
-        observer.unobserve(paginationEntry.target);
-
-        await loadNextPage(() => {
-          const nextObservedElement = document.querySelector<HTMLElement>(observedSelector);
-          if (nextObservedElement) {
-            observer.observe(nextObservedElement);
-          }
-        });
-      }
-    }, intersectionObserveOptions);
-
-    const initialObservedElement: HTMLElement | null = document.querySelector<HTMLElement>(observedSelector);
-    if (initialObservedElement) {
-      observer.observe(initialObservedElement);
+    const initialElement = document.querySelector<HTMLElement>(InfiniteScroll.OBSERVED_SELECTOR);
+    if (initialElement) {
+      this.observer.observe(initialElement);
     }
   }
 
+  private async loadNextPageAndObserve(hasOnlyImages: boolean): Promise<void> {
+    try {
+      await this.loadNextPage(hasOnlyImages);
+      this.observeNextElement();
+    } catch (error) {
+      this.displayError(error);
+    }
+  }
+
+  private async loadNextPage(hasOnlyImages: boolean): Promise<void> {
+    const spinnerElement = this.createSpinner();
+    const paginationElement = this.getPaginationElement();
+
+    paginationElement.replaceChildren(spinnerElement);
+
+    const searchForm = this.getSearchForm();
+    const paginationForm = this.getPaginationForm();
+    const action = searchForm.getAttribute("action");
+
+    if (!action) {
+      throw new Error("Search form action not defined");
+    }
+
+    const response = await http("POST", action, { body: new FormData(paginationForm) });
+    const nextPageHtml = await response.text();
+
+    if (!nextPageHtml) {
+      return;
+    }
+
+    this.appendNextPageResults(nextPageHtml, hasOnlyImages);
+  }
+
+  private appendNextPageResults(html: string, hasOnlyImages: boolean): void {
+    const parser = new DOMParser();
+    const nextPageDoc = parser.parseFromString(html, "text/html");
+
+    const nextArticles = Array.from(nextPageDoc.querySelectorAll<HTMLElement>(InfiniteScroll.LAST_ARTICLE_SELECTOR));
+    const nextPaginationElement = nextPageDoc.querySelector<HTMLElement>("#pagination");
+
+    const paginationElement = document.querySelector<HTMLElement>("#pagination");
+    paginationElement?.remove();
+
+    const urlsElement = this.getUrlsElement();
+
+    if (nextArticles.length > 0 && !hasOnlyImages) {
+      urlsElement.appendChild(document.createElement(InfiniteScroll.HORIZONTAL_DIVIDER));
+    }
+
+    urlsElement.append(...nextArticles);
+
+    if (nextPaginationElement) {
+      const resultsElement = document.querySelector<HTMLElement>("#results");
+      resultsElement?.appendChild(nextPaginationElement);
+    }
+  }
+
+  private observeNextElement(): void {
+    if (!this.observer) {
+      return;
+    }
+
+    const nextElement = document.querySelector<HTMLElement>(InfiniteScroll.OBSERVED_SELECTOR);
+    if (nextElement) {
+      this.observer.observe(nextElement);
+    }
+  }
+
+  private displayError(error: unknown): void {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Failed to load next page:", message);
+
+    const errorElement = document.createElement("div");
+    errorElement.className = InfiniteScroll.ERROR_CLASS;
+    errorElement.setAttribute("role", "alert");
+    errorElement.textContent = settings.translations?.error_loading_next_page ?? "Error loading next page";
+
+    const paginationElement = document.querySelector<HTMLElement>("#pagination");
+    paginationElement?.replaceChildren(errorElement);
+  }
+
+  private createSpinner(): HTMLElement {
+    const spinner = document.createElement("div");
+    spinner.className = "loader";
+    return spinner;
+  }
+
+  private getSearchForm(): HTMLFormElement {
+    const form = document.querySelector<HTMLFormElement>("#search");
+    assertElement(form);
+    return form;
+  }
+
+  private getPaginationForm(): HTMLFormElement {
+    const form = document.querySelector<HTMLFormElement>("#pagination form.next_page");
+    assertElement(form);
+    return form;
+  }
+
+  private getPaginationElement(): HTMLElement {
+    const element = document.querySelector<HTMLElement>("#pagination");
+    assertElement(element);
+    return element;
+  }
+
+  private getUrlsElement(): HTMLElement {
+    const element = document.querySelector<HTMLElement>("#urls");
+    assertElement(element);
+    return element;
+  }
+
   protected async post(): Promise<void> {
-    // noop
+    // Cleanup on plugin unload
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
+    }
   }
 }

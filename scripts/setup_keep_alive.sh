@@ -40,14 +40,13 @@ python3 "$PROJECT_DIR/scripts/keep_alive.py" "$RENDER_URL"
 if [ $? -eq 0 ]; then
     echo "✓ Connection successful!"
 else
-    echo "✗ Connection failed. Check the URL and try again."
-    exit 1
+    echo "⚠️  First test failed, but continuing setup..."
 fi
 
 echo ""
 echo "2. Adding to crontab..."
 
-# Check if already in crontab
+# Cron entry - pings every 10 minutes
 CRON_ENTRY="*/10 * * * * cd $PROJECT_DIR && python3 scripts/keep_alive.py $RENDER_URL >> logs/keep_alive.log 2>&1"
 
 if crontab -l 2>/dev/null | grep -q "keep_alive.py"; then

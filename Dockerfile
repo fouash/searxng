@@ -53,9 +53,6 @@ COPY --chown=977:977 ./container/entrypoint.sh \
                       ./container/limiter.toml \
                       ./
 
-# Copy keep-alive monitoring page
-COPY --chown=977:977 ./container/keep_alive.html ./searx/static/keep_alive.html
-
 # Create data/domains directory for Saudi company domains and mappings
 # Files will be auto-downloaded at startup if missing
 RUN chmod +x ./render-entrypoint.sh && mkdir -p ./data/domains

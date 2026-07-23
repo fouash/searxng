@@ -34,7 +34,72 @@ engines:
   - name: saudi_companies_db
     disabled: false
 
+  # ─────────────────────────────────────────────────────────────────
+  # INTERNET ARCHIVE SEARCH ENGINES (Historical Web)
+  # ─────────────────────────────────────────────────────────────────
+  # These archive APIs are free and have generous rate limits
+  # No authentication required
+  # Provide access to 780+ billion archived web pages
+
+  - name: Wayback Machine
+    engine: wayback_machine
+    shortcut: wa
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: Common Crawl
+    engine: common_crawl
+    shortcut: cc
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: Memento Archive
+    engine: memento_archive
+    shortcut: ma
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: Archive.today
+    engine: archive_today
+    shortcut: ar
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: Perma.cc
+    engine: perma_cc
+    shortcut: pc
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: Arquivo.pt
+    engine: arquivo_pt
+    shortcut: pt
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: UK Web Archive
+    engine: uk_web_archive
+    shortcut: uk
+    categories: web
+    disabled: false
+    timeout: 5
+
+  - name: Library of Congress Archives
+    engine: loc_archives
+    shortcut: loc
+    categories: web
+    disabled: false
+    timeout: 5
+
+  # ─────────────────────────────────────────────────────────────────
   # OPTIONAL: Certificate Transparency API (if outbound access available)
+  # ─────────────────────────────────────────────────────────────────
   # Requires Render Standard tier or higher for outbound HTTPS
   - name: crtsh
     engine: crtsh
@@ -43,13 +108,23 @@ engines:
     disabled: true
     # Enable if deploying on Render with outbound access
 
+  # ─────────────────────────────────────────────────────────────────
   # NETWORK LIMITATION NOTICE:
-  # The Render environment has restricted outbound network access.
-  # All external search engines timeout due to proxy/firewall policies.
-  # For outbound access, upgrade Render to Standard tier or higher.
-  # For offline-only operation, use saudi_companies_db engine above.
+  # ─────────────────────────────────────────────────────────────────
+  # The Render free tier has restricted outbound network access.
+  # Archive engines above DO NOT consume bandwidth (pre-archived data).
+  # Traditional search engines (Google, Bing, etc.) timeout due to
+  # proxy/firewall policies.
+  #
+  # For traditional external search engines:
+  # - Upgrade Render to Standard tier ($7/month) for outbound access
+  # - Follow: RENDER_STANDARD_UPGRADE_GUIDE.md
+  #
+  # For offline operation:
+  # - Use saudi_companies_db (offline Saudi company search)
+  # - Use archive engines above (780B+ historical pages)
 
-  # Disable all external engines to avoid error messages
+  # Disable traditional external engines on free tier
   - name: google
     disabled: true
   - name: bing

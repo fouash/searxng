@@ -31,13 +31,14 @@ RUN set -eux -o pipefail; \
 
 FROM docker.io/searxng/base:searxng AS dist
 
-# Railway's base image does not include curl; install it because the migrated
-# Render startup script uses curl to fetch the Saudi company datasets.
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 COPY --chown=977:977 --from=builder /usr/local/searxng/.venv/ ./.venv/
 COPY --chown=977:977 --from=builder /usr/local/searxng/searx/ ./searx/
+# Bundle the Saudi datasets into the image. Do not rely on Render-era runtime
+# downloads for data that is already part of this repository.
+COPY --chown=977:977 ./data/domains/ ./data/domains/
 COPY --chown=977:977 ./container/entrypoint.sh \
                       ./container/render-entrypoint.sh \
                       ./container/settings.template.yml \

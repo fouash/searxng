@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
-# Standalone multi-stage Dockerfile for Railway/Render deployment.
+# SearXNG image for Railway. Saudi company discovery is runtime-driven;
+# no Saudi company database is bundled into the image.
 
 FROM docker.io/searxng/base:searxng-builder AS builder
 
@@ -9,7 +10,6 @@ ENV UV_NO_MANAGED_PYTHON="true" \
     UV_NATIVE_TLS="true"
 
 ARG TIMESTAMP_VENV="0"
-
 RUN set -eux -o pipefail; \
     export SOURCE_DATE_EPOCH="$TIMESTAMP_VENV"; \
     uv venv; \
@@ -24,7 +24,6 @@ RUN set -eux -o pipefail; \
 
 COPY --exclude=./searx/version_frozen.py ./searx/ ./searx/
 RUN printf 'VERSION_STRING = "unknown"\nVERSION_TAG = "unknown"\nDOCKER_TAG = "unknown"\nGIT_URL = "unknown"\nGIT_BRANCH = "unknown"\n' > ./searx/version_frozen.py
-
 RUN set -eux -o pipefail; \
     python -m compileall -q -f -j 0 --invalidation-mode=unchecked-hash ./searx/; \
     find ./searx/static/ -type f \( -name "*.html" -o -name "*.css" -o -name "*.js" -o -name "*.svg" \) -exec gzip -9 -k {} + -exec brotli -9 -k {} + -exec gzip --test {}.gz + -exec brotli --test {}.br +
@@ -36,16 +35,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
 
 COPY --chown=977:977 --from=builder /usr/local/searxng/.venv/ ./.venv/
 COPY --chown=977:977 --from=builder /usr/local/searxng/searx/ ./searx/
-# Bundle the Saudi datasets into the image. Do not rely on Render-era runtime
-# downloads for data that is already part of this repository.
-COPY --chown=977:977 ./data/domains/ ./data/domains/
 COPY --chown=977:977 ./container/entrypoint.sh \
                       ./container/render-entrypoint.sh \
                       ./container/settings.template.yml \
                       ./container/limiter.toml \
                       ./
-
-RUN chmod +x ./render-entrypoint.sh && mkdir -p ./data/domains
+RUN chmod +x ./render-entrypoint.sh
 
 ARG VERSION="unknown"
 ENV __SEARXNG_VERSION="$VERSION" \

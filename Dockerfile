@@ -13,7 +13,7 @@ ENV UV_NO_MANAGED_PYTHON="true" \
 
 ARG TIMESTAMP_VENV="0"
 
-RUN --mount=type=cache,id=uv,target=/root/.cache/uv set -eux -o pipefail; \
+RUN --mount=type=cache,id=cacheKey-uv,target=/root/.cache/uv set -eux -o pipefail; \
     export SOURCE_DATE_EPOCH="$TIMESTAMP_VENV"; \
     uv venv; \
     uv pip install --requirements ./requirements.txt --requirements ./requirements-server.txt; \

@@ -27,21 +27,51 @@ ui:
   default_theme: simple
 
 engines:
-  # OFFLINE SAUDI COMPANY DISCOVERY (Primary)
-  # Local database of Saudi domains from Certificate Transparency logs
-  # Works offline without any external API calls
-  # Download domains: python scripts/download_saudi_domains.py
+  # Primary local Saudi company discovery engine.
   - name: saudi companies
     engine: saudi_companies_db
     disabled: false
+    categories: business
 
-  # ─────────────────────────────────────────────────────────────────
-  # INTERNET ARCHIVE SEARCH ENGINES (Historical Web)
-  # ─────────────────────────────────────────────────────────────────
-  # These archive APIs are free and have generous rate limits
-  # No authentication required
-  # Provide access to 780+ billion archived web pages
+  # External web search engines. These were disabled in the old Render
+  # configuration, but Railway provides normal outbound HTTPS and the
+  # SearXNG service must have real web-search providers enabled.
+  - name: brave
+    disabled: false
+    categories: web
+    timeout: 10
 
+  - name: bing
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: duckduckgo
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: google
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: qwant
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: startpage
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: mojeek
+    disabled: false
+    categories: web
+    timeout: 10
+
+  # Historical/archive engines remain available but opt-in.
   - name: wayback machine
     engine: wayback_machine
     shortcut: wbm
@@ -98,55 +128,19 @@ engines:
     disabled: true
     timeout: 5
 
-  # ─────────────────────────────────────────────────────────────────
-  # OPTIONAL: Certificate Transparency API (if outbound access available)
-  # ─────────────────────────────────────────────────────────────────
-  # Requires Render Standard tier or higher for outbound HTTPS
+  # Keep metadata/special-purpose engines disabled until separately tested.
   - name: crtsh
     engine: crtsh
     shortcut: crt
     categories: business
     disabled: true
-    # Enable if deploying on Render with outbound access
+    timeout: 10
 
-  # ─────────────────────────────────────────────────────────────────
-  # NETWORK LIMITATION NOTICE:
-  # ─────────────────────────────────────────────────────────────────
-  # The Render free tier has restricted outbound network access.
-  # Archive engines above DO NOT consume bandwidth (pre-archived data).
-  # Traditional search engines (Google, Bing, etc.) timeout due to
-  # proxy/firewall policies.
-  #
-  # For traditional external search engines:
-  # - Upgrade Render to Standard tier ($7/month) for outbound access
-  # - Follow: RENDER_STANDARD_UPGRADE_GUIDE.md
-  #
-  # For offline operation:
-  # - Use saudi_companies_db (offline Saudi company search)
-  # - Use archive engines above (780B+ historical pages)
-
-  # Disable traditional external engines on free tier
-  - name: google
-    disabled: true
-  - name: bing
-    disabled: true
-  - name: yahoo
-    disabled: true
-  - name: duckduckgo
-    disabled: true
-  - name: qwant
-    disabled: true
-  - name: brave
-    disabled: true
-  - name: startpage
-    disabled: true
   - name: wikipedia
     disabled: true
   - name: wikidata
     disabled: true
   - name: whois
-    disabled: true
-  - name: mojeek
     disabled: true
   - name: google cse
     disabled: true

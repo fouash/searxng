@@ -1,9 +1,6 @@
 # syntax=docker/dockerfile:1
-# Standalone multi-stage Dockerfile for Render deployment.
-# The upstream build relies on a locally pre-built builder image; this file
-# inlines both stages so Render can build from a clean git clone.
+# Standalone multi-stage Dockerfile for Railway/Render deployment.
 
-# ── builder ──────────────────────────────────────────────────────────────────
 FROM docker.io/searxng/base:searxng-builder AS builder
 
 COPY ./requirements.txt ./requirements-server.txt ./
@@ -22,28 +19,22 @@ RUN set -eux -o pipefail; \
     find ./.venv/lib/ -type d -name "__pycache__" -exec rm -rf {} +; \
     find ./.venv/lib/ -type f -name "*.pyc" -delete; \
     python -m compileall -q -f -j 0 --invalidation-mode=unchecked-hash ./.venv/lib/; \
-    find ./.venv/lib/python*/site-packages/*.dist-info/ -type f -name "RECORD" \
-        -exec sort -t, -k1,1 -o {} {} \;; \
+    find ./.venv/lib/python*/site-packages/*.dist-info/ -type f -name "RECORD" -exec sort -t, -k1,1 -o {} {} \;; \
     find ./.venv/ -exec touch -h --date="@$TIMESTAMP_VENV" {} +
 
 COPY --exclude=./searx/version_frozen.py ./searx/ ./searx/
-
-# version_frozen.py: git is not available at runtime in the container, so we
-# write a static stub here; version.py imports it and skips the git subprocess.
-RUN printf 'VERSION_STRING = "unknown"\nVERSION_TAG = "unknown"\nDOCKER_TAG = "unknown"\nGIT_URL = "unknown"\nGIT_BRANCH = "unknown"\n' \
-    > ./searx/version_frozen.py
+RUN printf 'VERSION_STRING = "unknown"\nVERSION_TAG = "unknown"\nDOCKER_TAG = "unknown"\nGIT_URL = "unknown"\nGIT_BRANCH = "unknown"\n' > ./searx/version_frozen.py
 
 RUN set -eux -o pipefail; \
     python -m compileall -q -f -j 0 --invalidation-mode=unchecked-hash ./searx/; \
-    find ./searx/static/ -type f \
-        \( -name "*.html" -o -name "*.css" -o -name "*.js" -o -name "*.svg" \) \
-        -exec gzip -9 -k {} + \
-        -exec brotli -9 -k {} + \
-        -exec gzip --test {}.gz + \
-        -exec brotli --test {}.br +
+    find ./searx/static/ -type f \( -name "*.html" -o -name "*.css" -o -name "*.js" -o -name "*.svg" \) -exec gzip -9 -k {} + -exec brotli -9 -k {} + -exec gzip --test {}.gz + -exec brotli --test {}.br +
 
-# ── dist ─────────────────────────────────────────────────────────────────────
 FROM docker.io/searxng/base:searxng AS dist
+
+# Railway's base image does not include curl; install it because the migrated
+# Render startup script uses curl to fetch the Saudi company datasets.
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 COPY --chown=977:977 --from=builder /usr/local/searxng/.venv/ ./.venv/
 COPY --chown=977:977 --from=builder /usr/local/searxng/searx/ ./searx/
@@ -53,8 +44,6 @@ COPY --chown=977:977 ./container/entrypoint.sh \
                       ./container/limiter.toml \
                       ./
 
-# Create data/domains directory for Saudi company domains and mappings
-# Files will be auto-downloaded at startup if missing
 RUN chmod +x ./render-entrypoint.sh && mkdir -p ./data/domains
 
 ARG VERSION="unknown"
@@ -69,5 +58,4 @@ ENV __SEARXNG_VERSION="$VERSION" \
     GRANIAN_BLOCKING_THREADS_IDLE_TIMEOUT="5m"
 
 EXPOSE 8080
-
 ENTRYPOINT ["/usr/local/searxng/render-entrypoint.sh"]

@@ -11,10 +11,26 @@ if [ ! -f "${_cfg}/limiter.toml" ]; then
     cp -f /usr/local/searxng/limiter.toml "${_cfg}/limiter.toml" 2>/dev/null || true
 fi
 
-# Do not download or load a Saudi company database during startup.
-# Discovery is performed continuously by the application/search engines,
-# with validation and deduplication downstream in saudidex-BE.
-echo "[searxng] Saudi company discovery mode: runtime"
+# Install the explicit production configuration before the upstream entrypoint.
+# This prevents the upstream image from silently generating settings.yml from
+# its generic template and ensures Railway runs the SaudiDex engine allowlist.
+if [ ! -f "${_cfg}/settings.yml" ]; then
+    if [ ! -f /usr/local/searxng/settings.production.yml ]; then
+        echo "[searxng] ERROR: bundled production settings are missing" >&2
+        exit 1
+    fi
+    cp -f /usr/local/searxng/settings.production.yml "${_cfg}/settings.yml"
+    echo "[searxng] Loaded bundled production settings.yml"
+else
+    echo "[searxng] Using existing production settings.yml"
+fi
 
+# Fail fast if the production configuration was not actually installed.
+if [ ! -s "${_cfg}/settings.yml" ]; then
+    echo "[searxng] ERROR: settings.yml is empty" >&2
+    exit 1
+fi
+
+echo "[searxng] Saudi company discovery mode: runtime"
 echo "[searxng] Starting SearXNG..."
 exec /usr/local/searxng/entrypoint.sh

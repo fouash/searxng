@@ -1,6 +1,7 @@
 *
 
 !container/*.template.*
+!container/settings.production.yml
 !container/entrypoint.sh
 !container/render-entrypoint.sh
 !container/limiter.toml

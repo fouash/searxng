@@ -5,11 +5,13 @@
 use_default_settings:
   engines:
     keep_only:
-      - google
-      - bing
       - brave
-      - mojeek
       - duckduckgo
+      - yahoo
+      - startpage
+      - qwant
+      - ecosia
+      - yep
 
 server:
   secret_key: "ultrasecretkey"
@@ -35,27 +37,37 @@ ui:
   default_theme: simple
 
 engines:
-  - name: google
-    disabled: false
-    categories: web
-    timeout: 10
-
-  - name: bing
-    disabled: false
-    categories: web
-    timeout: 10
-
   - name: brave
     disabled: false
     categories: web
     timeout: 10
 
-  - name: mojeek
+  - name: duckduckgo
     disabled: false
     categories: web
     timeout: 10
 
-  - name: duckduckgo
+  - name: yahoo
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: startpage
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: qwant
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: ecosia
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: yep
     disabled: false
     categories: web
     timeout: 10

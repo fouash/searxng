@@ -10,7 +10,6 @@ use_default_settings:
       - yahoo
       - startpage
       - qwant
-      - ecosia
       - yep
 
 server:
@@ -53,16 +52,15 @@ engines:
     timeout: 10
 
   - name: startpage
+    engine: startpage
+    startpage_categ: web
     disabled: false
     categories: web
     timeout: 10
 
   - name: qwant
-    disabled: false
-    categories: web
-    timeout: 10
-
-  - name: ecosia
+    engine: qwant
+    qwant_categ: web
     disabled: false
     categories: web
     timeout: 10

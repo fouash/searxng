@@ -1,5 +1,5 @@
-# Read the documentation before extending the defaults:
-# https://docs.searxng.org/admin/settings/
+# SearXNG configuration for SaudiDex company-name -> official-domain discovery.
+# Keep the engine set intentionally small and focused on general web search.
 
 use_default_settings: true
 
@@ -27,16 +27,8 @@ ui:
   default_theme: simple
 
 engines:
-  # Primary local Saudi company discovery engine.
-  - name: saudi companies
-    engine: saudi_companies_db
-    disabled: false
-    categories: business
-
-  # External web search engines. These were disabled in the old Render
-  # configuration, but Railway provides normal outbound HTTPS and the
-  # SearXNG service must have real web-search providers enabled.
-  - name: brave
+  # Primary web-search providers for SaudiDex domain discovery.
+  - name: google
     disabled: false
     categories: web
     timeout: 10
@@ -46,22 +38,7 @@ engines:
     categories: web
     timeout: 10
 
-  - name: duckduckgo
-    disabled: false
-    categories: web
-    timeout: 10
-
-  - name: google
-    disabled: false
-    categories: web
-    timeout: 10
-
-  - name: qwant
-    disabled: false
-    categories: web
-    timeout: 10
-
-  - name: startpage
+  - name: brave
     disabled: false
     categories: web
     timeout: 10
@@ -71,71 +48,57 @@ engines:
     categories: web
     timeout: 10
 
-  # Historical/archive engines remain available but opt-in.
+  - name: duckduckgo
+    disabled: false
+    categories: web
+    timeout: 10
+
+  # Historical/archive and metadata engines are intentionally disabled.
   - name: wayback machine
     engine: wayback_machine
     shortcut: wbm
     categories: web
     disabled: true
-    timeout: 5
-
   - name: common crawl
     engine: common_crawl
     shortcut: ccl
     categories: web
     disabled: true
-    timeout: 5
-
   - name: memento archive
     engine: memento_archive
     shortcut: mem
     categories: web
     disabled: true
-    timeout: 5
-
   - name: archive.today
     engine: archive_today
     shortcut: atd
     categories: web
     disabled: true
-    timeout: 5
-
   - name: perma.cc
     engine: perma_cc
     shortcut: pcc
     categories: web
     disabled: true
-    timeout: 5
-
   - name: arquivo.pt
     engine: arquivo_pt
     shortcut: apt
     categories: web
     disabled: true
-    timeout: 5
-
   - name: uk web archive
     engine: uk_web_archive
     shortcut: ukw
     categories: web
     disabled: true
-    timeout: 5
-
   - name: library of congress
     engine: loc_archives
     shortcut: loc
     categories: web
     disabled: true
-    timeout: 5
-
-  # Keep metadata/special-purpose engines disabled until separately tested.
   - name: crtsh
     engine: crtsh
     shortcut: crt
     categories: business
     disabled: true
-    timeout: 10
-
   - name: wikipedia
     disabled: true
   - name: wikidata
@@ -147,4 +110,12 @@ engines:
   - name: ahmia
     disabled: true
   - name: torch
+    disabled: true
+  - name: qwant
+    disabled: true
+  - name: startpage
+    disabled: true
+  - name: saudi companies
+    engine: saudi_companies_db
+    categories: business
     disabled: true

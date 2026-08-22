@@ -30,8 +30,8 @@ RUN set -eux -o pipefail; \
 
 FROM docker.io/searxng/base:searxng AS dist
 
-USER root
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*
+# The SearXNG base image is not Debian/Ubuntu and does not provide apt-get.
+# Do not install curl/ca-certificates here; startup has no runtime download dependency.
 
 COPY --chown=977:977 --from=builder /usr/local/searxng/.venv/ ./.venv/
 COPY --chown=977:977 --from=builder /usr/local/searxng/searx/ ./searx/

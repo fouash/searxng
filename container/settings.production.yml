@@ -1,0 +1,71 @@
+# SearXNG production configuration for SaudiDex.
+# Explicit allowlist: only the engines below are enabled.
+# This avoids inheriting unwanted default engines from SearXNG.
+
+use_default_settings:
+  engines:
+    keep_only:
+      - brave
+      - duckduckgo
+      - yahoo
+      - startpage
+      - qwant
+      - yep
+
+server:
+  secret_key: "ultrasecretkey"
+  image_proxy: false
+  limiter: false
+  public_instance: false
+  default_http_headers:
+    Access-Control-Allow-Origin: "*"
+    Access-Control-Allow-Methods: "GET, OPTIONS"
+    Access-Control-Allow-Headers: "Content-Type, X-Requested-With"
+
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json
+
+outgoing:
+  request_timeout: 30.0
+  max_request_timeout: 60.0
+
+ui:
+  default_theme: simple
+
+engines:
+  - name: brave
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: duckduckgo
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: yahoo
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: startpage
+    engine: startpage
+    startpage_categ: web
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: qwant
+    engine: qwant
+    qwant_categ: web
+    disabled: false
+    categories: web
+    timeout: 10
+
+  - name: yep
+    disabled: false
+    categories: web
+    timeout: 10

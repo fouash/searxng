@@ -25,7 +25,24 @@ else
     echo "[searxng] Using existing production settings.yml"
 fi
 
+# Never allow SearXNG's documented insecure placeholder secret to reach startup.
+# Generate a per-container secret when the bundled config still contains the
+# placeholder. This keeps the secret out of Git and makes every deployment safe.
+if grep -q 'secret_key: "ultrasecretkey"' "${_cfg}/settings.yml"; then
+    _secret="$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
+    sed -i "s/secret_key: \"ultrasecretkey\"/secret_key: \"${_secret}\"/" "${_cfg}/settings.yml"
+    echo "[searxng] Generated runtime server secret"
+fi
+
 # Fail fast if the production configuration was not actually installed.
+if ! grep -q '^server:' "${_cfg}/settings.yml"; then
+    echo "[searxng] ERROR: production server configuration is missing" >&2
+    exit 1
+fi
+if ! grep -q '^engines:' "${_cfg}/settings.yml"; then
+    echo "[searxng] ERROR: production engine configuration is missing" >&2
+    exit 1
+fi
 if [ ! -s "${_cfg}/settings.yml" ]; then
     echo "[searxng] ERROR: settings.yml is empty" >&2
     exit 1
